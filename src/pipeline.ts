@@ -12,15 +12,17 @@ import { markdownChunker } from "./nodes/markdownChunker.js";
 import { openrouterEmbedder } from "./nodes/openrouterEmbedder.js";
 import { upstashUpsert } from "./nodes/upstashUpsert.js";
 import { saveMarkdown } from "./nodes/saveMarkdown.js";
+import { libreOfficeToPdf } from "./nodes/libreOfficeToPdf.js";
 
 /**
  * Builds and compiles the RAG ingestion pipeline as a LangGraph StateGraph.
  *
  * Flow:
  *   START → fileTypeRouter
- *     ├─ "pdf"           → pdfSplitter → [processPdfChunk (Parallel)] → markdownMerger → markdownNormalizer
- *     ├─ "office"        → officeparserNode → geminiExtraction → markdownNormalizer
- *     └─ "text"          → officeparserNode → geminiExtraction → markdownNormalizer
+ *     ├─ "pdf"     → pdfSplitter → [processPdfChunk (Parallel)] → markdownMerger → markdownNormalizer
+ *     ├─ "convert" → libreOfficeToPdf → pdfSplitter → (same as pdf branch)
+ *     ├─ "office"  → officeparserNode → geminiExtraction → markdownNormalizer
+ *     └─ "text"    → officeparserNode → geminiExtraction → markdownNormalizer
  *   markdownNormalizer → saveMarkdown → markdownChunker → openrouterEmbedder → upstashUpsert → END
  */
 
@@ -46,6 +48,7 @@ export function buildPipeline() {
     .addNode("fileTypeRouter", fileTypeRouter)
 
     // ── Phase 2a: PDF Branch ──
+    .addNode("libreOfficeToPdf", libreOfficeToPdf)
     .addNode("pdfSplitter", pdfSplitter)
     .addNode("processPdfChunk", processPdfChunk)
     .addNode("markdownMerger", markdownMerger)
@@ -70,9 +73,13 @@ export function buildPipeline() {
     // Router → conditional branch
     .addConditionalEdges("fileTypeRouter", routeByMimeType, {
       pdf: "pdfSplitter",
+      convert: "libreOfficeToPdf",
       office: "officeparserNode",
       text: "officeparserNode",
     })
+
+    // Convert branch: LibreOffice → pdfSplitter → (joins PDF branch)
+    .addEdge("libreOfficeToPdf", "pdfSplitter")
 
     // PDF branch flow
     .addConditionalEdges("pdfSplitter", dispatchPdfChunks, ["processPdfChunk"])

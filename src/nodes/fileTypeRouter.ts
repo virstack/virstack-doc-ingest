@@ -21,6 +21,11 @@ export async function fileTypeRouter(
 /**
  * Routing function used as the conditional edge after fileTypeRouter.
  * Returns a string key that maps to the next node.
+ *
+ *  "pdf"     → direct PDF processing
+ *  "convert" → LibreOffice → PDF → parallel extraction
+ *  "office"  → officeparser (XLSX, CSV, XLS)
+ *  "text"    → officeparser (TXT, HTML)
  */
 export function routeByMimeType(state: PipelineState): string {
   const mime = state.mimeType;
@@ -29,23 +34,38 @@ export function routeByMimeType(state: PipelineState): string {
     return "pdf";
   }
 
-  if (mime === "text/plain") {
-    return "text";
+  // Formats that LibreOffice should convert to PDF first
+  const libreOfficeTypes = [
+    // Word processing
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // DOCX
+    "application/msword",                                                        // DOC
+    "application/rtf",                                                           // RTF
+    "text/rtf",                                                                  // RTF alternate
+    "application/vnd.oasis.opendocument.text",                                  // ODT
+    "application/epub+zip",                                                      // EPUB
+    // Presentations
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation", // PPTX
+    "application/vnd.ms-powerpoint",                                             // PPT
+    "application/vnd.oasis.opendocument.presentation",                          // ODP
+  ];
+
+  if (libreOfficeTypes.includes(mime)) {
+    return "convert";
   }
 
-  // DOCX, PPTX, XLSX, CSV, and other office formats
+  // Spreadsheets and CSV — officeparser handles these well
   const officeTypes = [
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "application/msword",
-    "application/vnd.ms-powerpoint",
-    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // XLSX
+    "application/vnd.ms-excel",                                           // XLS
     "text/csv",
   ];
 
   if (officeTypes.includes(mime)) {
     return "office";
+  }
+
+  if (mime === "text/plain" || mime === "text/html") {
+    return "text";
   }
 
   // Fallback: try to treat as text
