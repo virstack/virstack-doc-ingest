@@ -1,0 +1,30 @@
+{
+  "name": "langchain-pipeline",
+  "version": "1.0.0",
+  "description": "RAG ingestion pipeline using LangGraph, Gemini (OpenRouter), OpenAI embeddings, and Upstash Vector",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@langchain/core": "^0.3.0",
+    "@langchain/langgraph": "^0.2.0",
+    "@upstash/vector": "^1.1.0",
+    "csv-parse": "^5.6.0",
+    "dotenv": "^16.4.0",
+    "mime-types": "^2.1.35",
+    "officeparser": "^4.1.0",
+    "openai": "^4.70.0",
+    "pdf-lib": "^1.17.1"
+  },
+  "devDependencies": {
+    "@langchain/langgraph-cli": "^1.1.16",
+    "@types/mime-types": "^2.1.4",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}
