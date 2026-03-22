@@ -21,59 +21,48 @@ You must strictly adhere to the following rules:
 Output the final Markdown only. Do not include conversational filler before or after the extracted content.`;
 
 /**
- * Iterates over pdfChunks, sending each as an inline base64 PDF to Gemini
- * via OpenRouter. Collects per-chunk markdown into markdownParts.
+ * Parallel worker node to process a SINGLE PDF chunk.
+ * This function will be triggered multiple times via the 'Send' API.
  */
-export async function geminiPdfLoop(
-  state: PipelineState,
+export async function processPdfChunk(
+  state: { chunk: string; totalChunks: number; index: number }
 ): Promise<Partial<PipelineState>> {
-  const { pdfChunks } = state;
-  const markdownParts: string[] = [];
+  const { chunk: base64, totalChunks, index } = state;
 
   console.log(
-    `[geminiPdfLoop] Processing ${pdfChunks.length} PDF chunk(s) with ${LLM_MODEL}`,
+    `[processPdfChunk] Processing chunk ${index + 1}/${totalChunks} (${((base64.length * 0.75) / 1024).toFixed(0)} KB)`
   );
 
-  for (let i = 0; i < pdfChunks.length; i++) {
-    const chunk = pdfChunks[i];
-    const base64 = chunk.toString("base64");
-
-    console.log(
-      `[geminiPdfLoop] Sending chunk ${i + 1}/${pdfChunks.length} (${(chunk.length / 1024).toFixed(0)} KB)`,
-    );
-
-    const response = await openrouter.chat.completions.create({
-      model: LLM_MODEL,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        {
-          role: "user",
-          content: [
-            {
-              type: "file" as any,
-              file: {
-                filename: `chunk_${i + 1}.pdf`,
-                file_data: `data:application/pdf;base64,${base64}`,
-              },
-            } as any,
-            {
-              type: "text",
-              text: `Extract all content from this PDF (chunk ${i + 1} of ${pdfChunks.length}) into clean Markdown.`,
+  const response = await openrouter.chat.completions.create({
+    model: LLM_MODEL,
+    messages: [
+      { role: "system", content: SYSTEM_PROMPT },
+      {
+        role: "user",
+        content: [
+          {
+            type: "file" as any,
+            file: {
+              filename: `chunk_${index + 1}.pdf`,
+              file_data: `data:application/pdf;base64,${base64}`,
             },
-          ],
-        },
-      ],
-      max_tokens: 16384,
-      temperature: 0,
-    });
+          } as any,
+          {
+            type: "text",
+            text: `Extract all content from this PDF (chunk ${index + 1} of ${totalChunks}) into clean Markdown.`,
+          },
+        ],
+      },
+    ],
+    max_tokens: 16384,
+    temperature: 0,
+  });
 
-    const markdown = response.choices[0]?.message?.content?.trim() ?? "";
-    markdownParts.push(markdown);
+  const markdown = response.choices[0]?.message?.content?.trim() ?? "";
 
-    console.log(
-      `[geminiPdfLoop] Chunk ${i + 1} extracted (${markdown.length} chars)`,
-    );
-  }
+  console.log(
+    `[processPdfChunk] Chunk ${index + 1} extracted (${markdown.length} chars)`
+  );
 
-  return { markdownParts };
+  return { markdownParts: [markdown] };
 }

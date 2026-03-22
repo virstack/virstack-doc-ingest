@@ -1,5 +1,5 @@
 import "dotenv/config";
-import OpenAI from "openai";
+import { OpenAI } from "openai";
 import { Index, type IndexConfig } from "@upstash/vector";
 
 /* ------------------------------------------------------------------ */

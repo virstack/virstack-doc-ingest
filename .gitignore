@@ -2,6 +2,8 @@ node_modules/
 dist/
 .env
 *.tsbuildinfo
+/docs
+/outputs
 
 # LangGraph API
 .langgraph_api

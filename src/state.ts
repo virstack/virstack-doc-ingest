@@ -14,11 +14,14 @@ export const PipelineStateAnnotation = Annotation.Root({
   /** Extracted raw text (office / text branch) */
   rawText: Annotation<string>,
 
-  /** 10-page PDF chunk buffers (PDF branch) */
-  pdfChunks: Annotation<Buffer[]>,
+  /** 10-page PDF chunk buffers (base64 strings, PDF branch) */
+  pdfChunks: Annotation<string[]>,
 
   /** Per-chunk markdown outputs from Gemini (PDF branch) */
-  markdownParts: Annotation<string[]>,
+  markdownParts: Annotation<string[]>({
+    reducer: (x, y) => x.concat(y),
+    default: () => [],
+  }),
 
   /** Final merged / extracted markdown (both branches converge here) */
   markdown: Annotation<string>,

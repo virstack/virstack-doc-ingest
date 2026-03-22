@@ -1,9 +1,10 @@
-import { StateGraph, END } from "@langchain/langgraph";
-import { PipelineStateAnnotation } from "./state.js";
+import { StateGraph, END, Send } from "@langchain/langgraph";
+import { PipelineStateAnnotation, type PipelineState } from "./state.js";
 import { fileTypeRouter, routeByMimeType } from "./nodes/fileTypeRouter.js";
 import { pdfSplitter } from "./nodes/pdfSplitter.js";
-import { geminiPdfLoop } from "./nodes/geminiPdfLoop.js";
+import { processPdfChunk } from "./nodes/processPdfChunk.js";
 import { markdownMerger } from "./nodes/markdownMerger.js";
+
 import { officeparserNode } from "./nodes/officeparserNode.js";
 import { geminiExtraction } from "./nodes/geminiExtraction.js";
 import { markdownNormalizer } from "./nodes/markdownNormalizer.js";
@@ -17,11 +18,28 @@ import { saveMarkdown } from "./nodes/saveMarkdown.js";
  *
  * Flow:
  *   START → fileTypeRouter
- *     ├─ "pdf"           → pdfSplitter → geminiPdfLoop → markdownMerger → markdownNormalizer
+ *     ├─ "pdf"           → pdfSplitter → [processPdfChunk (Parallel)] → markdownMerger → markdownNormalizer
  *     ├─ "office"        → officeparserNode → geminiExtraction → markdownNormalizer
  *     └─ "text"          → officeparserNode → geminiExtraction → markdownNormalizer
- *   markdownNormalizer → markdownChunker → openaiEmbedder → upstashUpsert → END
+ *   markdownNormalizer → saveMarkdown → markdownChunker → openrouterEmbedder → upstashUpsert → END
  */
+
+/**
+ * Returns an array of 'Send' objects to process each PDF chunk in parallel.
+ */
+function dispatchPdfChunks(state: PipelineState) {
+  if (!state.pdfChunks || state.pdfChunks.length === 0) {
+    console.warn("[dispatchPdfChunks] No PDF chunks found to process.");
+    return [];
+  }
+  return state.pdfChunks.map((chunk, index) => {
+    return new Send("processPdfChunk", {
+      chunk,
+      index,
+      totalChunks: state.pdfChunks.length,
+    });
+  });
+}
 export function buildPipeline() {
   const graph = new StateGraph(PipelineStateAnnotation)
     // ── Phase 1: Routing ──
@@ -29,7 +47,7 @@ export function buildPipeline() {
 
     // ── Phase 2a: PDF Branch ──
     .addNode("pdfSplitter", pdfSplitter)
-    .addNode("geminiPdfLoop", geminiPdfLoop)
+    .addNode("processPdfChunk", processPdfChunk)
     .addNode("markdownMerger", markdownMerger)
 
     // ── Phase 2b: Office / Text Branch ──
@@ -57,8 +75,8 @@ export function buildPipeline() {
     })
 
     // PDF branch flow
-    .addEdge("pdfSplitter", "geminiPdfLoop")
-    .addEdge("geminiPdfLoop", "markdownMerger")
+    .addConditionalEdges("pdfSplitter", dispatchPdfChunks, ["processPdfChunk"])
+    .addEdge("processPdfChunk", "markdownMerger")
     .addEdge("markdownMerger", "markdownNormalizer")
 
     // Office/text branch flow
