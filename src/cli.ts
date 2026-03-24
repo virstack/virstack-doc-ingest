@@ -5,66 +5,74 @@ import fs from "node:fs/promises";
 import { initializeConfig, getEnvConfig, pipelineConfig } from "./core/config.js";
 import { batchGraph } from "./index.js";
 
-/* ------------------------------------------------------------------ */
-/*  Supported file extensions                                         */
-/* ------------------------------------------------------------------ */
+// --- Import the new UI libraries ---
+import { intro, outro, text, spinner, select, isCancel, cancel } from "@clack/prompts";
+import color from "picocolors";
+import figlet from "figlet";
+
 const SUPPORTED_EXTENSIONS = new Set([
-  ".pdf",
-  ".docx",
-  ".doc",
-  ".rtf",
-  ".odt",
-  ".epub",
-  ".pptx",
-  ".ppt",
-  ".odp",
-  ".xlsx",
-  ".xls",
-  ".csv",
-  ".txt",
-  ".html",
+  ".pdf", ".docx", ".doc", ".rtf", ".odt", ".epub",
+  ".pptx", ".ppt", ".odp", ".xlsx", ".xls", ".csv",
+  ".txt", ".html",
 ]);
 
-/* ------------------------------------------------------------------ */
-/*  Main                                                              */
-/* ------------------------------------------------------------------ */
 async function main() {
-  try {
-    // 1. Initialize using environment variables from config.js
-    initializeConfig(getEnvConfig());
-  } catch (error: any) {
-    console.error(`❌ Initialization failed: ${error.message}`);
-    process.exit(1);
-  }
+  // 1. Print a cool ASCII Art Banner
+  console.clear();
+  console.log(
+    color.cyan(
+      figlet.textSync("RAG Ingest", { horizontalLayout: "full" })
+    )
+  );
 
-  const targetPath = process.argv[2];
+  // 2. Start the Clack Prompt
+  intro(color.bgCyan(color.black(" Welcome to the RAG Ingestion Pipeline ")));
 
+  let targetPath = process.argv[2];
+
+  // 3. INTERACTIVE WIZARD: If no path was provided, ask for it!
   if (!targetPath) {
-    console.error("Usage: npm run dev -- <file-or-directory>");
-    console.error("  Single file:  npm run dev -- ./samples/document.pdf");
-    console.error("  Directory:    npm run dev -- ./samples/");
-    process.exit(1);
+    const inputPath = await text({
+      message: "What would you like to process?",
+      placeholder: "./documents/ or ./sample.pdf",
+      validate(value) {
+        if (!value || value.length === 0) return "Path is required!";
+      },
+    });
+
+    if (isCancel(inputPath)) {
+      cancel("Operation cancelled.");
+      process.exit(0);
+    }
+    targetPath = inputPath as string;
   }
 
   const absolutePath = path.resolve(targetPath);
 
-  // Determine if the target is a file or directory
+  // Initialize Config
+  try {
+    initializeConfig(getEnvConfig());
+  } catch (error: any) {
+    cancel(`Initialization failed: ${error.message}`);
+    process.exit(1);
+  }
+
+  // 4. Check if path exists
   const stats = await fs.stat(absolutePath).catch(() => {
-    console.error(`Not found: ${absolutePath}`);
+    cancel(`Path not found: ${absolutePath}`);
     process.exit(1);
   });
 
   let filesToProcess: string[] = [];
 
-  if (stats!.isDirectory()) {
+  if (stats.isDirectory()) {
     const entries = await fs.readdir(absolutePath);
     filesToProcess = entries
       .filter((f) => SUPPORTED_EXTENSIONS.has(path.extname(f).toLowerCase()))
       .map((f) => path.resolve(absolutePath, f));
 
     if (filesToProcess.length === 0) {
-      console.error(`No supported files found in: ${absolutePath}`);
-      console.error(`Supported: ${[...SUPPORTED_EXTENSIONS].join(", ")}`);
+      cancel(`No supported files found in: ${absolutePath}`);
       process.exit(1);
     }
   } else {
@@ -73,93 +81,66 @@ async function main() {
 
   const isBatch = filesToProcess.length > 1;
 
-  console.log("═══════════════════════════════════════════════════════");
-  console.log("  RAG Ingestion Pipeline");
-  console.log("═══════════════════════════════════════════════════════");
-  if (isBatch) {
-    console.log(`  Mode:        Batch (${filesToProcess.length} files)`);
-    console.log(`  Concurrency: Controlled by LangGraph`);
-    console.log(`  Directory:   ${absolutePath}`);
-  } else {
-    console.log(`  Mode:        Single file`);
-    console.log(`  File:        ${path.basename(filesToProcess[0])}`);
-    console.log(`  Path:        ${filesToProcess[0]}`);
+  // 5. Interactive Confirmation Dropdown
+  const confirm = await select({
+    message: `Found ${filesToProcess.length} file(s). Ready to process?`,
+    options: [
+      { value: true, label: "Yes, start ingestion" },
+      { value: false, label: "No, cancel" },
+    ],
+  });
+
+  if (isCancel(confirm) || !confirm) {
+    cancel("Operation cancelled by user.");
+    process.exit(0);
   }
-  console.log("═══════════════════════════════════════════════════════\n");
+
+  // 6. Beautiful Loading Spinner
+  const s = spinner();
+  s.start(`Processing ${filesToProcess.length} document(s) with LangGraph...`);
 
   const batchStart = Date.now();
 
-  // Use the native Batch Orchestrator graph WITH a concurrency limit
-  const batchResult = await batchGraph.invoke(
-    { files: filesToProcess },
-    { maxConcurrency: pipelineConfig.maxConcurrentFiles },
-  );
+  try {
+    // Invoke the graph
+    const batchResult = await batchGraph.invoke(
+      { files: filesToProcess },
+      { maxConcurrency: pipelineConfig.maxConcurrentFiles },
+    );
 
-  const results = batchResult.results;
-  const totalElapsed = ((Date.now() - batchStart) / 1000).toFixed(1);
+    const totalElapsed = ((Date.now() - batchStart) / 1000).toFixed(1);
+    const results = batchResult.results;
 
-  // Print summary
-  console.log("\n═══════════════════════════════════════════════════════");
-  console.log("  Pipeline Complete");
-  console.log("═══════════════════════════════════════════════════════");
+    // Stop the spinner
+    s.stop(color.green(`✔ Processing complete in ${totalElapsed}s!`));
 
-  if (isBatch) {
+    // 7. Print Summary
     const succeeded = results.filter((r: any) => r.status === "success");
     const failed = results.filter((r: any) => r.status === "error");
 
-    console.log(
-      `\n  Results: ${succeeded.length} succeeded, ${failed.length} failed\n`,
-    );
-
-    // Summary table
-    console.log(
-      "  ┌─────────────────────────────────────────┬──────────┬────────┬─────────┬──────────┐",
-    );
-    console.log(
-      "  │ File                                    │ Status   │ Chunks │ Vectors │ Duration │",
-    );
-    console.log(
-      "  ├─────────────────────────────────────────┼──────────┼────────┼─────────┼──────────┤",
-    );
+    console.log(`\n  ${color.bold("Results:")} ${color.green(`${succeeded.length} succeeded`)}, ${color.red(`${failed.length} failed`)}\n`);
 
     for (const r of results) {
-      const file = r.file.padEnd(39).slice(0, 39);
-      const status = r.status === "success" ? "✅ OK   " : "❌ FAIL ";
-      const chunks = String(r.chunks).padStart(6);
-      const vectors = String(r.vectors).padStart(7);
-      const duration = `${r.durationSec}s`.padStart(8);
-      console.log(
-        `  │ ${file} │ ${status} │ ${chunks} │ ${vectors} │ ${duration} │`,
-      );
-    }
-
-    console.log(
-      "  └─────────────────────────────────────────┴──────────┴────────┴─────────┴──────────┘",
-    );
-
-    if (failed.length > 0) {
-      console.log("\n  Failed files:");
-      for (const r of failed) {
-        console.log(`    • ${r.file}: ${r.error}`);
+      const fileName = color.cyan(r.file.padEnd(30).slice(0, 30));
+      if (r.status === "success") {
+        console.log(`  ✅ ${fileName} │ ${r.chunks} chunks │ ${r.vectors} vectors │ ${r.durationSec}s`);
+      } else {
+        console.log(`  ❌ ${fileName} │ ${color.red(r.error)}`);
       }
     }
-  } else {
-    const r = results[0];
-    console.log(`  File:           ${r.file}`);
-    console.log(`  Status:         ${r.status}`);
-    console.log(`  Chunks created: ${r.chunks}`);
-    console.log(`  Vectors:        ${r.vectors}`);
+
+    outro(color.bgGreen(color.black(" Pipeline Finished Successfully! ")));
+    
+    if (failed.length > 0) process.exit(1);
+
+  } catch (err: any) {
+    s.stop(color.red("✖ Pipeline crashed"));
+    cancel(err.message);
+    process.exit(1);
   }
-
-  console.log(`\n  Total duration: ${totalElapsed}s`);
-  console.log("═══════════════════════════════════════════════════════");
-
-  // Exit with error code if any file failed
-  const hasErrors = results.some((r: any) => r.status === "error");
-  if (hasErrors) process.exit(1);
 }
 
 main().catch((err) => {
-  console.error("\n❌ Pipeline failed:", err);
+  console.error(err);
   process.exit(1);
 });
