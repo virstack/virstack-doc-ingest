@@ -3,6 +3,7 @@ import path from "node:path";
 import { PDFDocument } from "pdf-lib";
 import { pipelineConfig, requireInit } from "../config.js";
 import type { PipelineState } from "../state.js";
+import { logger, LogSource } from "../logger.js";
 
 /**
  * Splits a PDF into sub-documents of PDF_PAGES_PER_CHUNK pages each.
@@ -14,7 +15,7 @@ export async function pdfSplitter(
   requireInit();
   if (!state.filePath) throw new Error("[pdfSplitter] filePath is missing");
   const fullPath = path.resolve(process.cwd(), state.filePath);
-  console.log(`[pdfSplitter] Reading file at: ${fullPath}`);
+  logger.info(LogSource.PDF_SPLITTER, `Reading file at: ${fullPath}`);
 
   let fileBuffer;
   try {
@@ -25,10 +26,8 @@ export async function pdfSplitter(
   const pdfDoc = await PDFDocument.load(fileBuffer);
   const totalPages = pdfDoc.getPageCount();
 
-  console.log(`[pdfSplitter] Total pages: ${totalPages}`);
-  console.log(
-    `[pdfSplitter] Splitting into chunks of ${pipelineConfig.pdfPagesPerChunk} pages`,
-  );
+  logger.info(LogSource.PDF_SPLITTER, `Total pages: ${totalPages}`);
+  logger.info(LogSource.PDF_SPLITTER, `Splitting into chunks of ${pipelineConfig.pdfPagesPerChunk} pages`);
 
   const chunks: string[] = [];
 
@@ -49,7 +48,7 @@ export async function pdfSplitter(
     chunks.push(Buffer.from(subBytes).toString("base64"));
   }
 
-  console.log(`[pdfSplitter] Created ${chunks.length} PDF chunk(s)`);
+  logger.info(LogSource.PDF_SPLITTER, `Created ${chunks.length} PDF chunk(s)`);
 
   return { pdfChunks: chunks };
 }

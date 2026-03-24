@@ -1,4 +1,5 @@
 import type { PipelineState } from "../state.js";
+import { logger, LogSource } from "../logger.js";
 
 /**
  * Normalizes the merged/extracted markdown:
@@ -12,7 +13,7 @@ export async function markdownNormalizer(
 ): Promise<Partial<PipelineState>> {
   let md = state.markdown;
 
-  console.log(`[markdownNormalizer] Input: ${md.length} chars`);
+  logger.info(LogSource.MARKDOWN_NORMALIZER, `Input: ${md.length} chars`);
 
   // 1. Strip HTML tags (but keep content)
   md = md.replace(/<\/?[^>]+(>|$)/g, "");
@@ -52,7 +53,7 @@ export async function markdownNormalizer(
   // 5. Trim
   md = md.trim();
 
-  console.log(`[markdownNormalizer] Output: ${md.length} chars`);
+  logger.info(LogSource.MARKDOWN_NORMALIZER, `Output: ${md.length} chars`);
 
   return { markdown: md };
 }

@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
 import type { PipelineState } from "../state.js";
+import { logger, LogSource } from "../logger.js";
 
 /**
  * Saves the final normalized markdown to a local file.
@@ -23,7 +24,7 @@ export async function saveMarkdown(
   const outputDir = path.resolve(process.cwd(), "outputs", `${baseName}_${fileHash}`);
   const outputPath = path.join(outputDir, "full_content.md");
 
-  console.log(`[saveMarkdown] Saving to: ${outputPath}`);
+  logger.info(LogSource.SAVE_MARKDOWN, `Saving to: ${outputPath}`);
 
   // Create directory (and parents)
   await fs.mkdir(outputDir, { recursive: true });
@@ -31,7 +32,7 @@ export async function saveMarkdown(
   // Write markdown
   await fs.writeFile(outputPath, markdown, "utf-8");
 
-  console.log(`[saveMarkdown] ✅ Markdown saved successfully`);
+  logger.success(LogSource.SAVE_MARKDOWN, `Markdown saved successfully`);
 
   return {};
 }

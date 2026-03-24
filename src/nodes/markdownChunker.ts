@@ -1,6 +1,7 @@
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { pipelineConfig, requireInit } from "../config.js";
 import type { PipelineState } from "../state.js";
+import { logger, LogSource } from "../logger.js";
 
 /**
  * Splits markdown text into semantic chunks using LangChain's RecursiveCharacterTextSplitter.
@@ -13,7 +14,7 @@ export async function markdownChunker(
   requireInit();
   const { markdown } = state;
 
-  console.log(`[markdownChunker] Input: ${markdown.length} chars`);
+  logger.info(LogSource.MARKDOWN_CHUNKER, `Input: ${markdown.length} chars`);
 
   const splitter = new RecursiveCharacterTextSplitter({
     chunkSize: pipelineConfig.chunkSize,
@@ -25,7 +26,7 @@ export async function markdownChunker(
   const docs = await splitter.createDocuments([markdown]);
   const textChunks = docs.map((doc) => doc.pageContent.trim());
 
-  console.log(`[markdownChunker] Created ${textChunks.length} chunks`);
+  logger.info(LogSource.MARKDOWN_CHUNKER, `Created ${textChunks.length} chunks`);
 
   return { textChunks };
 }

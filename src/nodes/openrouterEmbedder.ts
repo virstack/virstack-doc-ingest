@@ -1,5 +1,6 @@
 import { openrouter, pipelineConfig, requireInit } from "../config.js";
 import type { PipelineState } from "../state.js";
+import { logger, LogSource } from "../logger.js";
 
 /** Maximum chunks to embed in a single OpenAI API call */
 const BATCH_SIZE = 50;
@@ -14,18 +15,14 @@ export async function openrouterEmbedder(
   requireInit();
   const { textChunks } = state;
 
-  console.log(
-    `[openaiEmbedder] Embedding ${textChunks.length} chunks with ${pipelineConfig.embeddingModel}`,
-  );
+  logger.info(LogSource.OPENROUTER_EMBEDDER, `Embedding ${textChunks.length} chunks with ${pipelineConfig.embeddingModel}`);
 
   const allVectors: number[][] = [];
 
   for (let i = 0; i < textChunks.length; i += BATCH_SIZE) {
     const batch = textChunks.slice(i, i + BATCH_SIZE);
 
-    console.log(
-      `[openaiEmbedder] Batch ${Math.floor(i / BATCH_SIZE) + 1}: ${batch.length} chunk(s)`,
-    );
+    logger.info(LogSource.OPENROUTER_EMBEDDER, `Batch ${Math.floor(i / BATCH_SIZE) + 1}: ${batch.length} chunk(s)`);
 
     const response = await openrouter.embeddings.create({
       model: pipelineConfig.embeddingModel,
@@ -40,9 +37,7 @@ export async function openrouterEmbedder(
     }
   }
 
-  console.log(
-    `[openaiEmbedder] Generated ${allVectors.length} vectors (${allVectors[0]?.length ?? 0}d)`,
-  );
+  logger.info(LogSource.OPENROUTER_EMBEDDER, `Generated ${allVectors.length} vectors (${allVectors[0]?.length ?? 0}d)`);
 
   return { vectors: allVectors };
 }

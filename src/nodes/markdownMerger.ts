@@ -1,4 +1,5 @@
 import type { PipelineState } from "../state.js";
+import { logger, LogSource } from "../logger.js";
 
 /**
  * Joins markdownParts from the PDF branch into a single markdown string.
@@ -11,9 +12,7 @@ export async function markdownMerger(
 ): Promise<Partial<PipelineState>> {
   const { markdownParts } = state;
 
-  console.log(
-    `[markdownMerger] Merging ${markdownParts.length} markdown part(s)`,
-  );
+  logger.info(LogSource.MARKDOWN_MERGER, `Merging ${markdownParts.length} markdown part(s)`);
 
   let merged = "";
 
@@ -43,9 +42,7 @@ export async function markdownMerger(
   // Collapse triple+ newlines into double
   merged = merged.replace(/\n{3,}/g, "\n\n");
 
-  console.log(
-    `[markdownMerger] Merged markdown: ${merged.length} chars`,
-  );
+  logger.info(LogSource.MARKDOWN_MERGER, `Merged markdown: ${merged.length} chars`);
 
   return { markdown: merged };
 }

@@ -2,6 +2,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { vectorIndex, requireInit } from "../config.js";
 import type { PipelineState } from "../state.js";
+import { logger, LogSource } from "../logger.js";
 
 /**
  * Upserts text chunks + their embedding vectors into Upstash Vector.
@@ -20,9 +21,7 @@ export async function upstashUpsert(
     .digest("hex")
     .slice(0, 8);
 
-  console.log(
-    `[upstashUpsert] Upserting ${textChunks.length} chunks for doc ${docId}`,
-  );
+  logger.info(LogSource.UPSTASH_UPSERT, `Upserting ${textChunks.length} chunks for doc ${docId}`);
 
   // Upstash Vector supports batch upserts
   const upsertPayload = textChunks.map((chunk, i) => ({
@@ -47,12 +46,10 @@ export async function upstashUpsert(
     const batch = upsertPayload.slice(i, i + BATCH_SIZE);
     await vectorIndex.upsert(batch);
 
-    console.log(
-      `[upstashUpsert] Upserted batch ${Math.floor(i / BATCH_SIZE) + 1}: ${batch.length} vectors`,
-    );
+    logger.info(LogSource.UPSTASH_UPSERT, `Upserted batch ${Math.floor(i / BATCH_SIZE) + 1}: ${batch.length} vectors`);
   }
 
-  console.log(`[upstashUpsert] ✅ All ${textChunks.length} chunks upserted`);
+  logger.success(LogSource.UPSTASH_UPSERT, `All ${textChunks.length} chunks upserted`);
 
   return {};
 }

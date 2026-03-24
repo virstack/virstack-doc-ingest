@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import officeparser from "officeparser";
 import { parse } from "csv-parse/sync";
 import type { PipelineState } from "../state.js";
+import { logger, LogSource } from "../logger.js";
 
 /**
  * Extracts raw text from office documents (DOCX, PPTX, XLSX) using officeparser,
@@ -12,7 +13,7 @@ export async function textExtractorNode(
 ): Promise<Partial<PipelineState>> {
   const { filePath, mimeType } = state;
 
-  console.log(`[textExtractorNode] Parsing: ${filePath} (${mimeType})`);
+  logger.info(LogSource.TEXT_EXTRACTOR, `Parsing: ${filePath} (${mimeType})`);
 
   let rawText: string;
 
@@ -37,9 +38,7 @@ export async function textExtractorNode(
     rawText = await officeparser.parseOfficeAsync(filePath) as string;
   }
 
-  console.log(
-    `[textExtractorNode] Extracted ${rawText.length} chars of raw text`,
-  );
+  logger.info(LogSource.TEXT_EXTRACTOR, `Extracted ${rawText.length} chars of raw text`);
 
   return { rawText };
 }

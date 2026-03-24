@@ -4,6 +4,7 @@ import path from "node:path";
 import os from "node:os";
 import fs from "node:fs/promises";
 import type { PipelineState } from "../state.js";
+import { logger, LogSource } from "../logger.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -29,9 +30,9 @@ export async function libreOfficeToPdf(
   const inputPath = path.resolve(process.cwd(), state.filePath);
   const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "lo-pdf-"));
 
-  console.log(`[libreOfficeToPdf] Converting: ${path.basename(inputPath)}`);
-  console.log(`[libreOfficeToPdf] Using soffice: ${sofficePath}`);
-  console.log(`[libreOfficeToPdf] Output dir: ${outputDir}`);
+  logger.info(LogSource.LIBRE_OFFICE, `Converting: ${path.basename(inputPath)}`);
+  logger.info(LogSource.LIBRE_OFFICE, `Using soffice: ${sofficePath}`);
+  logger.info(LogSource.LIBRE_OFFICE, `Output dir: ${outputDir}`);
 
   try {
     await execFileAsync(sofficePath, [
@@ -65,7 +66,7 @@ export async function libreOfficeToPdf(
     );
   }
 
-  console.log(`[libreOfficeToPdf] ✅ Converted to: ${pdfPath}`);
+  logger.success(LogSource.LIBRE_OFFICE, `Converted to: ${pdfPath}`);
 
   return { filePath: pdfPath };
 }

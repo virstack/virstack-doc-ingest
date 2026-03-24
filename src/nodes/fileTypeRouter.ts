@@ -1,6 +1,7 @@
 import path from "node:path";
 import mime from "mime-types";
 import type { PipelineState } from "../state.js";
+import { logger, LogSource } from "../logger.js";
 
 /**
  * Detects the MIME type of the input file and writes it to state.
@@ -10,7 +11,7 @@ export async function fileTypeRouter(
   state: PipelineState,
 ): Promise<Partial<PipelineState>> {
   if (state.rawText && !state.filePath) {
-    console.log("[fileTypeRouter] Direct text input detected (no file)");
+    logger.info(LogSource.FILE_ROUTER, "Direct text input detected (no file)");
     return { mimeType: "text/plain" };
   }
 
@@ -21,8 +22,8 @@ export async function fileTypeRouter(
   const ext = path.extname(state.filePath).toLowerCase();
   const detected = mime.lookup(ext) || "application/octet-stream";
 
-  console.log(`[fileTypeRouter] File: ${path.basename(state.filePath)}`);
-  console.log(`[fileTypeRouter] Detected MIME: ${detected}`);
+  logger.info(LogSource.FILE_ROUTER, `File: ${path.basename(state.filePath)}`);
+  logger.info(LogSource.FILE_ROUTER, `Detected MIME: ${detected}`);
 
   return { mimeType: detected };
 }
@@ -82,8 +83,6 @@ export function routeByMimeType(state: PipelineState): string {
   }
 
   // Fallback: try to treat as text
-  console.warn(
-    `[fileTypeRouter] Unknown MIME "${mime}", falling back to extract branch`,
-  );
+  logger.warn(LogSource.FILE_ROUTER, `Unknown MIME "${mime}", falling back to extract branch`);
   return "extract";
 }

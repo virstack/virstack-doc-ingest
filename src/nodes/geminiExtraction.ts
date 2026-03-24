@@ -1,5 +1,6 @@
 import { openrouter, pipelineConfig, apiLimit, requireInit } from "../config.js";
 import type { PipelineState } from "../state.js";
+import { logger, LogSource } from "../logger.js";
 
 const DEFAULT_SYSTEM_PROMPT = `You are an expert document extraction and formatting AI. Your task is to extract the exact, verbatim content from the provided document and convert it entirely into standard Markdown format. 
 
@@ -43,9 +44,7 @@ export async function geminiExtraction(
 
   if (isChunkFlow) {
     const { chunk: base64, totalChunks, index } = state;
-    console.log(
-      `[geminiExtraction] Processing PDF chunk ${index! + 1}/${totalChunks} (${((base64!.length * 0.75) / 1024).toFixed(0)} KB)`
-    );
+    logger.info(LogSource.GEMINI, `Processing PDF chunk ${index! + 1}/${totalChunks} (${((base64!.length * 0.75) / 1024).toFixed(0)} KB)`);
     userContent = [
       {
         type: "file" as any,
@@ -60,9 +59,7 @@ export async function geminiExtraction(
       },
     ];
   } else {
-    console.log(
-      `[geminiExtraction] Sending ${state.rawText!.length} chars to ${pipelineConfig.llmModel}`
-    );
+    logger.info(LogSource.GEMINI, `Sending ${state.rawText!.length} chars to ${pipelineConfig.llmModel}`);
     userContent = `Convert the following extracted document text into clean Markdown:\n\n${state.rawText}`;
   }
 
@@ -83,13 +80,11 @@ export async function geminiExtraction(
   const markdown = response.choices[0]?.message?.content?.trim() ?? "";
 
   if (isChunkFlow) {
-    console.log(
-      `[geminiExtraction] Chunk ${state.index! + 1}/${state.totalChunks} extracted (${markdown.length} chars)`
-    );
+    logger.info(LogSource.GEMINI, `Chunk ${state.index! + 1}/${state.totalChunks} extracted (${markdown.length} chars)`);
     return { markdownParts: [markdown] };
   }
 
-  console.log(`[geminiExtraction] Extracted markdown: ${markdown.length} chars`);
+  logger.info(LogSource.GEMINI, `Extracted markdown: ${markdown.length} chars`);
   return { markdown };
 }
 
