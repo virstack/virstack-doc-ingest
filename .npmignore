@@ -1,0 +1,15 @@
+# Source files
+src/
+tsconfig.json
+
+# Local configurations
+.env
+.env.*
+
+# Output directories
+outputs/
+tempfiles/
+officeParserTemp/
+
+# Misc
+.DS_Store

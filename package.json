@@ -1,22 +1,32 @@
 {
-  "name": "langchain-pipeline",
+  "name": "rag-ingestion-pipeline",
   "version": "1.0.0",
-  "description": "RAG ingestion pipeline using LangGraph, Gemini (OpenRouter), OpenAI embeddings, and Upstash Vector",
+  "description": "A high-performance, parallelized document ingestion and vectorization pipeline.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
   "bin": {
-    "rag-ingest": "dist/cli.js"
+    "rag-ingest": "./dist/cli.js"
   },
   "files": [
     "dist"
   ],
   "scripts": {
     "build": "tsc",
-    "prepack": "npm run build",
+    "prepublishOnly": "npm run build",
     "start": "node dist/cli.js",
     "dev": "tsx src/cli.ts"
   },
+  "keywords": [
+    "rag",
+    "llm",
+    "langgraph",
+    "gemini",
+    "pdf-parsing",
+    "vector-database"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
   "dependencies": {
     "@langchain/core": "^0.3.0",
     "@langchain/langgraph": "^0.2.0",
