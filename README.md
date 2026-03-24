@@ -65,6 +65,35 @@ rag-ingest ./documents/
 rag-ingest ./documents/ --verbose
 ```
 
+### Example Output
+
+```text
+  ____       _       ____     ___                                _   
+ |  _ \     / \     / ___|   |_ _|  _ __     __ _    ___   ___  | |_ 
+ | |_) |   / _ \   | |  _     | |  | '_ \   / _` |  / _ \ / __| | __|
+ |  _ <   / ___ \  | |_| |    | |  | | | | | (_| | |  __/ \__ \ | |_ 
+ |_| \_\ /_/   \_\  \____|   |___| |_| |_|  \__, |  \___| |___/  \__|
+                                            |___/                    
+┌   Welcome to the RAG Ingestion Pipeline 
+│
+◇  What file or directory would you like to process?
+│  ./docs                      
+│
+◇  Found 2 file(s). Ready to process?
+│  Yes, start ingestion  
+│              
+◇  ✔ Processing complete in 41.8s!           
+│
+◇  Final Results: 2 succeeded, 0 failed
+│
+│    ✔ PRES1 CIS 6006-Updated Assessment.p │   28 chunks │   28 vectors │ 41.7s
+│
+│    ✔ VAI-020-021-Webhook-Implementation. │   12 chunks │   12 vectors │ 27.9s
+│
+└   Pipeline Finished Successfully!
+```
+
+
 ---
 
 ## 🛠️ Usage: Library Mode (100% Provider Agnostic)
