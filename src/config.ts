@@ -7,8 +7,8 @@ export interface RagPipelineConfig {
   openRouterApiKey: string;
   upstashUrl: string;
   upstashToken: string;
-  llmModel?: string;
-  embeddingModel?: string;
+  llmModel: string;
+  embeddingModel: string;
   chunkSize?: number;
   chunkOverlap?: number;
   pdfPagesPerChunk?: number;
@@ -26,13 +26,13 @@ export let apiLimit: ReturnType<typeof pLimit>;
 
 // 3. Create the initialization function
 export function initializeConfig(config: RagPipelineConfig) {
-  // Apply defaults for optional fields
+  // Apply defaults for optional numeric fields
   pipelineConfig = {
     openRouterApiKey: config.openRouterApiKey,
     upstashUrl: config.upstashUrl,
     upstashToken: config.upstashToken,
-    llmModel: config.llmModel || "google/gemini-2.5-pro",
-    embeddingModel: config.embeddingModel || "text-embedding-3-large",
+    llmModel: config.llmModel,
+    embeddingModel: config.embeddingModel,
     chunkSize: config.chunkSize || 1000,
     chunkOverlap: config.chunkOverlap || 100,
     pdfPagesPerChunk: config.pdfPagesPerChunk || 10,

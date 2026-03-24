@@ -28,8 +28,8 @@ async function main() {
       openRouterApiKey: process.env.OPENROUTER_API_KEY as string,
       upstashUrl: process.env.UPSTASH_VECTOR_URL as string,
       upstashToken: process.env.UPSTASH_VECTOR_TOKEN as string,
-      llmModel: process.env.LLM_MODEL,
-      embeddingModel: process.env.EMBEDDING_MODEL,
+      llmModel: process.env.LLM_MODEL as string,
+      embeddingModel: process.env.EMBEDDING_MODEL as string,
       maxConcurrentFiles: parseInt(process.env.MAX_CONCURRENT_FILES || "3", 10),
       maxConcurrentApi: parseInt(process.env.MAX_CONCURRENT_API_CALLS || "15", 10),
     });
