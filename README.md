@@ -64,41 +64,33 @@ rag-ingest ./documents/
 
 ---
 
-## 🛠️ Usage: Library Mode (Agnostic Vector DB)
+## 🛠️ Usage: Library Mode (100% Provider Agnostic)
 
-You can seamlessly integrate this pipeline into your existing Node.js backends or SaaS applications. **The pipeline is 100% Vector DB agnostic.** Instead of hardcoding a specific database, you can dynamically inject an adapter for Pinecone, Qdrant, Upstash, pgvector, or a local JSON file.
+You can seamlessly integrate this pipeline into your existing Node.js backends or SaaS applications. **The pipeline is 100% Provider Agnostic.** Instead of hardcoding specific AI models or databases, you can dynamically inject adapters for Pinecone, Qdrant, Ollama, OpenAI, Vertex AI, pgvector, or any other service.
 
-### Example: Injecting a Custom Pinecone Adapter
+### Example: Injecting Local LLMs and Custom DBs
 
 ```typescript
-import { initializeConfig, batchGraph, type VectorStoreAdapter, type VectorRecord } from "langchain-pipeline";
+import { 
+  initializeConfig, 
+  batchGraph, 
+  type VectorStoreAdapter,
+  type LlmAdapter, 
+  type EmbeddingAdapter,
+  OpenRouterEmbeddingAdapter
+} from "rag-ingestion-pipeline";
 import { Pinecone } from '@pinecone-database/pinecone';
 
-// 1. Create your own adapter by fulfilling the VectorStoreAdapter contract
-class MyPineconeAdapter implements VectorStoreAdapter {
-  private index: any;
-  
-  constructor() {
-    const pc = new Pinecone({ apiKey: process.env.PINECONE_KEY! });
-    this.index = pc.index("my-index");
-  }
+// 1. Create a custom Vector DB adapter
+class MyPineconeAdapter implements VectorStoreAdapter { /* ... */ }
 
-  async upsert(records: VectorRecord[]) {
-    // Map the standard pipeline format to Pinecone's specific format
-    const pineconeRecords = records.map(r => ({
-      id: r.id,
-      values: r.vector,
-      metadata: r.metadata
-    }));
-    await this.index.upsert(pineconeRecords);
-  }
-}
+// 2. Create a custom local LLM adapter
+class LocalOllamaAdapter implements LlmAdapter { /* ... */ }
 
-// 2. Initialize the pipeline and inject your custom adapter
+// 3. Initialize the pipeline and inject your custom adapters
 initializeConfig({
-  openRouterApiKey: process.env.OPENROUTER_API_KEY!,
-  llmModel: "google/gemini-2.5-pro",
-  embeddingModel: "text-embedding-3-large",
+  llm: new LocalOllamaAdapter(),
+  embedder: new OpenRouterEmbeddingAdapter(process.env.OPENROUTER_API_KEY!, "text-embedding-3-large"),
   vectorStore: new MyPineconeAdapter(), // Boom! Agnostic injection.
   maxConcurrentFiles: 3
 });
@@ -117,7 +109,7 @@ async function processDocuments() {
 processDocuments();
 ```
 
-*(Note: If you are building a quick script and just want to use Upstash Vector, you can import the built-in `UpstashAdapter` from the package and pass it as your `vectorStore` parameter).*
+*(Note: If you are building a quick script, you can import the built-in `OpenRouterLlmAdapter`, `OpenRouterEmbeddingAdapter`, and `UpstashAdapter` from the package).*
 
 ## ⚙️ Configuration Options
 
@@ -125,17 +117,18 @@ When calling `initializeConfig(options)`, you can pass the following parameters:
 
 | Parameter | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `openRouterApiKey` | `string` | **Required** | Your OpenRouter API key. |
+| `llm` | `LlmAdapter` | **Required** | The adapter to handle Markdown extraction from text/PDF chunks. |
+| `embedder` | `EmbeddingAdapter` | **Required** | The adapter to handle chunk vectorization. |
 | `vectorStore` | `VectorStoreAdapter` | **Required** | The database adapter to receive the chunks & vectors. |
-| `llmModel` | `string` | **Required** | Model used for markdown extraction. |
-| `embeddingModel` | `string` | **Required** | Model used for vector embeddings. |
+| `openRouterApiKey` | `string` | optional | Optional fallback for CLI backwards compatibility. |
 | `maxConcurrentFiles`| `number` | `3` | Max files processed in parallel. |
 | `maxConcurrentApi`  | `number` | `15` | Global rate limit for LLM/Embedding calls. |
 | `maxTokens`         | `number` | `16384` | Max tokens per extraction call. |
+| `embeddingDimensions`| `number` | `1536` | Output dimensions of the embedding model. |
 | `chunkSize`         | `number` | `1000` | Max characters per text chunk. |
 | `chunkOverlap`      | `number` | `100` | Overlap between text chunks. |
 | `pdfPagesPerChunk`  | `number` | `10` | PDF pages per parallel Vision call. |
-| `systemPrompt`      | `string` | (Internal) | Override the default extraction prompt. |
+| `systemPrompt`      | `string` | default | Custom system prompt for extraction. |
 
 ---
 

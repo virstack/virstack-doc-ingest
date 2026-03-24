@@ -1,6 +1,7 @@
-import { openrouter, pipelineConfig, apiLimit, requireInit } from "../config.js";
+import { pipelineConfig, apiLimit, requireInit } from "../config.js";
 import type { PipelineState } from "../state.js";
 import { logger, LogSource } from "../logger.js";
+import type { LlmInput } from "../aiAdapters.js";
 
 const DEFAULT_SYSTEM_PROMPT = `You are an expert document extraction and formatting AI. Your task is to extract the exact, verbatim content from the provided document and convert it entirely into standard Markdown format. 
 
@@ -22,12 +23,12 @@ You must strictly adhere to the following rules:
 Output the final Markdown only. Do not include conversational filler before or after the extracted content.`;
 
 /**
- * Unified Gemini node for all document extraction flows.
+ * Unified LLM node for all document extraction flows.
  * Handles both:
  * 1. Base64 PDF chunks via Vision (Parallel Map-Reduce branch)
  * 2. Raw text extracted by textExtractorNode (Text branch)
  */
-export async function geminiExtraction(
+export async function llmExtractionNode(
   state: Partial<PipelineState> & { chunk?: string; index?: number; totalChunks?: number }
 ): Promise<Partial<PipelineState>> {
 
@@ -37,67 +38,47 @@ export async function geminiExtraction(
   const isTextFlow = !!state.rawText;
 
   if (!isChunkFlow && !isTextFlow) {
-    throw new Error("[geminiExtraction] Neither chunk nor rawText was provided in the state.");
-  }
-
-  let userContent: any;
-
-  if (isChunkFlow) {
-    const { chunk: base64, totalChunks, index } = state;
-    logger.info(LogSource.GEMINI, `Processing PDF chunk ${index! + 1}/${totalChunks} (${((base64!.length * 0.75) / 1024).toFixed(0)} KB)`);
-    userContent = [
-      {
-        type: "file" as any,
-        file: {
-          filename: `chunk_${index! + 1}.pdf`,
-          file_data: `data:application/pdf;base64,${base64}`,
-        },
-      } as any,
-      {
-        type: "text",
-        text: `Extract all content from this PDF (chunk ${index! + 1} of ${totalChunks}) into clean Markdown.`,
-      },
-    ];
-  } else {
-    logger.info(LogSource.GEMINI, `Sending ${state.rawText!.length} chars to ${pipelineConfig.llmModel}`);
-    userContent = `Convert the following extracted document text into clean Markdown:\n\n${state.rawText}`;
+    throw new Error("[llmExtractionNode] Neither chunk nor rawText was provided in the state.");
   }
 
   const finalSystemPrompt = pipelineConfig.systemPrompt || DEFAULT_SYSTEM_PROMPT;
 
-  const response = await apiLimit(() =>
-    openrouter.chat.completions.create({
-      model: pipelineConfig.llmModel,
-      messages: [
-        { role: "system", content: finalSystemPrompt },
-        { role: "user", content: userContent },
-      ],
-      max_tokens: pipelineConfig.maxTokens,
-      temperature: 0,
-    })
-  );
-
-  const markdown = response.choices[0]?.message?.content?.trim() ?? "";
+  const promptInput: LlmInput = {
+    systemPrompt: finalSystemPrompt,
+    userText: isChunkFlow 
+      ? `Extract all content from this PDF (chunk ${state.index! + 1} of ${state.totalChunks}) into clean Markdown.`
+      : `Convert the following extracted document text into clean Markdown:\n\n${state.rawText}`,
+    base64PdfChunk: isChunkFlow ? state.chunk : undefined
+  };
 
   if (isChunkFlow) {
-    logger.info(LogSource.GEMINI, `Chunk ${state.index! + 1}/${state.totalChunks} extracted (${markdown.length} chars)`);
+    logger.info(LogSource.LLM_EXTRACTION, `Processing PDF chunk ${state.index! + 1}/${state.totalChunks} (${((state.chunk!.length * 0.75) / 1024).toFixed(0)} KB)`);
+  } else {
+    logger.info(LogSource.LLM_EXTRACTION, `Sending ${state.rawText!.length} chars to generic LLM Adapter`);
+  }
+
+  // Call the injected LLM adapter wrapped in your rate limiter!
+  const markdown = await apiLimit(() => 
+    pipelineConfig.llm.generateMarkdown(promptInput)
+  );
+
+  if (isChunkFlow) {
+    logger.info(LogSource.LLM_EXTRACTION, `Chunk ${state.index! + 1}/${state.totalChunks} extracted (${markdown.length} chars)`);
     return { markdownParts: [markdown] };
   }
 
-  logger.info(LogSource.GEMINI, `Extracted markdown: ${markdown.length} chars`);
+  logger.info(LogSource.LLM_EXTRACTION, `Extracted markdown: ${markdown.length} chars`);
   return { markdown };
 }
 
 /**
- * Conditional router to determine what happens after geminiExtraction.
+ * Conditional router to determine what happens after llmExtractionNode.
  * - If from PDF branch, it returns to markdownMerger
  * - If from Text branch, it goes straight to markdownNormalizer
  */
-export function routeAfterGemini(state: PipelineState): string {
-  // If markdownParts has contents but markdown is empty, we must merge
+export function routeAfterLlm(state: PipelineState): string {
   if (state.markdownParts && state.markdownParts.length > 0 && !state.markdown) {
     return "markdownMerger";
   }
-  // Otherwise, it was the raw text branch which already assigned state.markdown
   return "markdownNormalizer";
 }

@@ -11,3 +11,12 @@ export type { BatchState } from "./batchPipeline.js";
 
 // Export vector store injection types and built-in adapters
 export { type VectorStoreAdapter, type VectorRecord, UpstashAdapter } from "./vectorStore.js";
+
+// Export AI injection types and built-in adapters
+export {
+  type LlmAdapter,
+  type LlmInput,
+  type EmbeddingAdapter,
+  OpenRouterLlmAdapter,
+  OpenRouterEmbeddingAdapter
+} from "./aiAdapters.js";

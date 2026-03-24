@@ -2,13 +2,13 @@ import { StateGraph, END, Send } from "@langchain/langgraph";
 import { PipelineStateAnnotation, type PipelineState } from "./state.js";
 import { fileTypeRouter, routeByMimeType } from "./nodes/fileTypeRouter.js";
 import { pdfSplitter } from "./nodes/pdfSplitter.js";
-import { geminiExtraction, routeAfterGemini } from "./nodes/geminiExtraction.js";
+import { llmExtractionNode, routeAfterLlm } from "./nodes/llmExtractionNode.js";
 import { markdownMerger } from "./nodes/markdownMerger.js";
 
 import { textExtractorNode } from "./nodes/textExtractorNode.js";
 import { markdownNormalizer } from "./nodes/markdownNormalizer.js";
 import { markdownChunker } from "./nodes/markdownChunker.js";
-import { openrouterEmbedder } from "./nodes/openrouterEmbedder.js";
+import { vectorEmbedderNode } from "./nodes/vectorEmbedderNode.js";
 import { vectorUpsertNode } from "./nodes/vectorUpsertNode.js";
 import { saveMarkdown } from "./nodes/saveMarkdown.js";
 import { libreOfficeToPdf } from "./nodes/libreOfficeToPdf.js";
@@ -18,10 +18,10 @@ import { libreOfficeToPdf } from "./nodes/libreOfficeToPdf.js";
  *
  * Flow:
  *   START → fileTypeRouter
- *     ├─ "pdf"     → pdfSplitter → [geminiExtraction (Parallel)] → markdownMerger → markdownNormalizer
+ *     ├─ "pdf"     → pdfSplitter → [llmExtractionNode (Parallel)] → markdownMerger → markdownNormalizer
  *     ├─ "convert" → libreOfficeToPdf → pdfSplitter → (same as pdf branch)
- *     └─ "extract" → textExtractorNode → geminiExtraction → markdownNormalizer
- *   markdownNormalizer → saveMarkdown → markdownChunker → openrouterEmbedder → vectorUpsertNode → END
+ *     └─ "extract" → textExtractorNode → llmExtractionNode → markdownNormalizer
+ *   markdownNormalizer → saveMarkdown → markdownChunker → vectorEmbedderNode → vectorUpsertNode → END
  */
 
 /**
@@ -33,7 +33,7 @@ function dispatchPdfChunks(state: PipelineState) {
     return [];
   }
   return state.pdfChunks.map((chunk, index) => {
-    return new Send("geminiExtraction", {
+    return new Send("llmExtractionNode", {
       chunk,
       index,
       totalChunks: state.pdfChunks.length,
@@ -52,7 +52,7 @@ export function buildPipeline() {
 
     // ── Phase 2b: Text / Data Extraction Branch ──
     .addNode("textExtractorNode", textExtractorNode)
-    .addNode("geminiExtraction", geminiExtraction)
+    .addNode("llmExtractionNode", llmExtractionNode)
 
     // ── Phase 3: Normalization & Chunking ──
     .addNode("markdownNormalizer", markdownNormalizer)
@@ -60,7 +60,7 @@ export function buildPipeline() {
     .addNode("markdownChunker", markdownChunker)
 
     // ── Phase 4: Embedding & Indexing ──
-    .addNode("openrouterEmbedder", openrouterEmbedder)
+    .addNode("vectorEmbedderNode", vectorEmbedderNode)
     .addNode("vectorUpsertNode", vectorUpsertNode)
 
     // ── Edges ──
@@ -78,13 +78,13 @@ export function buildPipeline() {
     .addEdge("libreOfficeToPdf", "pdfSplitter")
 
     // PDF branch dispatcher
-    .addConditionalEdges("pdfSplitter", dispatchPdfChunks, ["geminiExtraction"])
+    .addConditionalEdges("pdfSplitter", dispatchPdfChunks, ["llmExtractionNode"])
 
     // Unified Document/Text branch flow
-    .addEdge("textExtractorNode", "geminiExtraction")
+    .addEdge("textExtractorNode", "llmExtractionNode")
 
-    // After geminiExtraction, conditionally merge PDF chunks or normalize Text
-    .addConditionalEdges("geminiExtraction", routeAfterGemini, {
+    // After llmExtractionNode, conditionally merge PDF chunks or normalize Text
+    .addConditionalEdges("llmExtractionNode", routeAfterLlm, {
       markdownMerger: "markdownMerger",
       markdownNormalizer: "markdownNormalizer",
     })
@@ -95,8 +95,8 @@ export function buildPipeline() {
     // Shared tail: normalize → save → chunk → embed → upsert → end
     .addEdge("markdownNormalizer", "saveMarkdown")
     .addEdge("saveMarkdown", "markdownChunker")
-    .addEdge("markdownChunker", "openrouterEmbedder")
-    .addEdge("openrouterEmbedder", "vectorUpsertNode")
+    .addEdge("markdownChunker", "vectorEmbedderNode")
+    .addEdge("vectorEmbedderNode", "vectorUpsertNode")
     .addEdge("vectorUpsertNode", END);
 
   return graph.compile();
