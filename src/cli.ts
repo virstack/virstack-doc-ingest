@@ -33,9 +33,7 @@ async function main() {
     // 1. Initialize using environment variables from config.js
     initializeConfig(getEnvConfig());
   } catch (error: any) {
-    console.error(
-      "Initialization failed: Missing required parameters in .env file.",
-    );
+    console.error(`❌ Initialization failed: ${error.message}`);
     process.exit(1);
   }
 

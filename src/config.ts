@@ -1,12 +1,11 @@
 import { OpenAI } from "openai";
-import { Index } from "@upstash/vector";
 import pLimit from "p-limit";
+import { UpstashAdapter, type VectorStoreAdapter } from "./vectorStore.js";
 
 // 1. Define what the user can configure
 export interface RagPipelineConfig {
   openRouterApiKey: string;
-  upstashUrl: string;
-  upstashToken: string;
+  vectorStore: VectorStoreAdapter;
   llmModel: string;
   embeddingModel: string;
   chunkSize?: number;
@@ -20,7 +19,6 @@ export interface RagPipelineConfig {
 
 // 2. Hold the global clients and settings
 export let openrouter: OpenAI;
-export let vectorIndex: Index;
 export let pipelineConfig: Required<RagPipelineConfig>;
 
 // Global API rate limiter initialized lazily
@@ -28,11 +26,23 @@ export let apiLimit: ReturnType<typeof pLimit>;
 
 // 3. Create the initialization function
 export function initializeConfig(config: RagPipelineConfig) {
+  // 1. Validate required parameters
+  const missing: string[] = [];
+  if (!config.openRouterApiKey) missing.push("openRouterApiKey");
+  if (!config.vectorStore) missing.push("vectorStore");
+  if (!config.llmModel) missing.push("llmModel");
+  if (!config.embeddingModel) missing.push("embeddingModel");
+
+  if (missing.length > 0) {
+    throw new Error(
+      `RAG Pipeline initialization failed. Missing required parameters: ${missing.join(", ")}`,
+    );
+  }
+
   // Apply defaults for optional numeric fields
   pipelineConfig = {
     openRouterApiKey: config.openRouterApiKey,
-    upstashUrl: config.upstashUrl,
-    upstashToken: config.upstashToken,
+    vectorStore: config.vectorStore,
     llmModel: config.llmModel,
     embeddingModel: config.embeddingModel,
     chunkSize: config.chunkSize || 1000,
@@ -51,17 +61,12 @@ export function initializeConfig(config: RagPipelineConfig) {
     maxRetries: 5,
   });
 
-  vectorIndex = new Index({
-    url: pipelineConfig.upstashUrl,
-    token: pipelineConfig.upstashToken,
-  });
-
   apiLimit = pLimit(pipelineConfig.maxConcurrentApi);
 }
 
 // Helper to ensure config is loaded before a node runs
 export function requireInit() {
-  if (!openrouter || !vectorIndex || !pipelineConfig) {
+  if (!openrouter || !pipelineConfig) {
     throw new Error(
       "RAG Pipeline not initialized. Call initializeConfig() first.",
     );
@@ -72,10 +77,17 @@ export function requireInit() {
  * Helper for CLI/Tools to get a RagPipelineConfig object from process.env
  */
 export function getEnvConfig(): RagPipelineConfig {
+  const url = process.env.UPSTASH_VECTOR_URL;
+  const token = process.env.UPSTASH_VECTOR_TOKEN;
+  let vectorStore: VectorStoreAdapter | undefined;
+
+  if (url && token) {
+    vectorStore = new UpstashAdapter(url, token);
+  }
+
   return {
     openRouterApiKey: process.env.OPENROUTER_API_KEY as string,
-    upstashUrl: process.env.UPSTASH_VECTOR_URL as string,
-    upstashToken: process.env.UPSTASH_VECTOR_TOKEN as string,
+    vectorStore: vectorStore as VectorStoreAdapter,
     llmModel: process.env.LLM_MODEL as string,
     embeddingModel: process.env.EMBEDDING_MODEL as string,
     chunkSize: process.env.CHUNK_SIZE

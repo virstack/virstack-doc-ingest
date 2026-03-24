@@ -64,20 +64,42 @@ rag-ingest ./documents/
 
 ---
 
-## 🛠️ Usage: Library Mode
+## 🛠️ Usage: Library Mode (Agnostic Vector DB)
 
-You can seamlessly integrate this pipeline into your existing Node.js backends or SaaS applications. No `.env` file is required; simply pass your configuration dynamically.
+You can seamlessly integrate this pipeline into your existing Node.js backends or SaaS applications. **The pipeline is 100% Vector DB agnostic.** Instead of hardcoding a specific database, you can dynamically inject an adapter for Pinecone, Qdrant, Upstash, pgvector, or a local JSON file.
+
+### Example: Injecting a Custom Pinecone Adapter
 
 ```typescript
-import { initializeConfig, batchGraph } from "langchain-pipeline";
+import { initializeConfig, batchGraph, type VectorStoreAdapter, type VectorRecord } from "langchain-pipeline";
+import { Pinecone } from '@pinecone-database/pinecone';
 
-// 1. Initialize the configuration with your API keys
+// 1. Create your own adapter by fulfilling the VectorStoreAdapter contract
+class MyPineconeAdapter implements VectorStoreAdapter {
+  private index: any;
+  
+  constructor() {
+    const pc = new Pinecone({ apiKey: process.env.PINECONE_KEY! });
+    this.index = pc.index("my-index");
+  }
+
+  async upsert(records: VectorRecord[]) {
+    // Map the standard pipeline format to Pinecone's specific format
+    const pineconeRecords = records.map(r => ({
+      id: r.id,
+      values: r.vector,
+      metadata: r.metadata
+    }));
+    await this.index.upsert(pineconeRecords);
+  }
+}
+
+// 2. Initialize the pipeline and inject your custom adapter
 initializeConfig({
-  openRouterApiKey: "sk-or-v1-...",
-  upstashUrl: "https://...",
-  upstashToken: "...",
-  llmModel: "google/gemini-2.0-flash-001",
+  openRouterApiKey: process.env.OPENROUTER_API_KEY!,
+  llmModel: "google/gemini-2.5-pro",
   embeddingModel: "text-embedding-3-large",
+  vectorStore: new MyPineconeAdapter(), // Boom! Agnostic injection.
   maxConcurrentFiles: 3
 });
 
@@ -88,16 +110,14 @@ async function processDocuments() {
   ];
 
   console.log("Starting ingestion pipeline...");
-  
-  // 2. Invoke the batch graph
   const result = await batchGraph.invoke({ files });
-
-  console.log("Processing complete!");
   console.dir(result.results, { depth: null });
 }
 
 processDocuments();
 ```
+
+*(Note: If you are building a quick script and just want to use Upstash Vector, you can import the built-in `UpstashAdapter` from the package and pass it as your `vectorStore` parameter).*
 
 ## ⚙️ Configuration Options
 
@@ -106,8 +126,7 @@ When calling `initializeConfig(options)`, you can pass the following parameters:
 | Parameter | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
 | `openRouterApiKey` | `string` | **Required** | Your OpenRouter API key. |
-| `upstashUrl` | `string` | **Required** | Upstash Vector database URL. |
-| `upstashToken` | `string` | **Required** | Upstash Vector REST token. |
+| `vectorStore` | `VectorStoreAdapter` | **Required** | The database adapter to receive the chunks & vectors. |
 | `llmModel` | `string` | **Required** | Model used for markdown extraction. |
 | `embeddingModel` | `string` | **Required** | Model used for vector embeddings. |
 | `maxConcurrentFiles`| `number` | `3` | Max files processed in parallel. |

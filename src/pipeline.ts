@@ -9,7 +9,7 @@ import { textExtractorNode } from "./nodes/textExtractorNode.js";
 import { markdownNormalizer } from "./nodes/markdownNormalizer.js";
 import { markdownChunker } from "./nodes/markdownChunker.js";
 import { openrouterEmbedder } from "./nodes/openrouterEmbedder.js";
-import { upstashUpsert } from "./nodes/upstashUpsert.js";
+import { vectorUpsertNode } from "./nodes/vectorUpsertNode.js";
 import { saveMarkdown } from "./nodes/saveMarkdown.js";
 import { libreOfficeToPdf } from "./nodes/libreOfficeToPdf.js";
 
@@ -21,7 +21,7 @@ import { libreOfficeToPdf } from "./nodes/libreOfficeToPdf.js";
  *     ├─ "pdf"     → pdfSplitter → [geminiExtraction (Parallel)] → markdownMerger → markdownNormalizer
  *     ├─ "convert" → libreOfficeToPdf → pdfSplitter → (same as pdf branch)
  *     └─ "extract" → textExtractorNode → geminiExtraction → markdownNormalizer
- *   markdownNormalizer → saveMarkdown → markdownChunker → openrouterEmbedder → upstashUpsert → END
+ *   markdownNormalizer → saveMarkdown → markdownChunker → openrouterEmbedder → vectorUpsertNode → END
  */
 
 /**
@@ -61,7 +61,7 @@ export function buildPipeline() {
 
     // ── Phase 4: Embedding & Indexing ──
     .addNode("openrouterEmbedder", openrouterEmbedder)
-    .addNode("upstashUpsert", upstashUpsert)
+    .addNode("vectorUpsertNode", vectorUpsertNode)
 
     // ── Edges ──
     // Start → Router
@@ -96,8 +96,8 @@ export function buildPipeline() {
     .addEdge("markdownNormalizer", "saveMarkdown")
     .addEdge("saveMarkdown", "markdownChunker")
     .addEdge("markdownChunker", "openrouterEmbedder")
-    .addEdge("openrouterEmbedder", "upstashUpsert")
-    .addEdge("upstashUpsert", END);
+    .addEdge("openrouterEmbedder", "vectorUpsertNode")
+    .addEdge("vectorUpsertNode", END);
 
   return graph.compile();
 }
