@@ -15,9 +15,9 @@ export async function upstashUpsert(
   // Generate a stable document ID from the file path
   const docId = crypto
     .createHash("sha256")
-    .update(filePath)
+    .update(filePath || "pasted_text")
     .digest("hex")
-    .slice(0, 16);
+    .slice(0, 8);
 
   console.log(
     `[upstashUpsert] Upserting ${textChunks.length} chunks for doc ${docId}`,
@@ -29,7 +29,8 @@ export async function upstashUpsert(
     vector: vectors[i],
     data: chunk,
     metadata: {
-      source: path.basename(filePath),
+      text: chunk,
+      source: state.filePath ? path.basename(state.filePath) : "pasted_text",
       sourcePath: filePath,
       mimeType: mimeType,
       chunkIndex: i,

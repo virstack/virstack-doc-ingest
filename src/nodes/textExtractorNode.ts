@@ -18,9 +18,10 @@ export async function textExtractorNode(
 
   if (mimeType === "text/plain") {
     // Plain text — just read directly
-    rawText = await fs.readFile(filePath, "utf-8");
+    rawText = filePath ? await fs.readFile(filePath, "utf-8") : state.rawText;
   } else if (mimeType === "text/csv") {
     // CSV — parse and convert to a readable text table
+    if (!filePath) throw new Error("filePath required for CSV parsing");
     const csvBuffer = await fs.readFile(filePath, "utf-8");
     const records: string[][] = parse(csvBuffer, {
       skip_empty_lines: true,
@@ -32,6 +33,7 @@ export async function textExtractorNode(
       .join("\n");
   } else {
     // DOCX, PPTX, XLSX — use officeparser
+    if (!filePath) throw new Error("filePath required for office document parsing");
     rawText = await officeparser.parseOfficeAsync(filePath) as string;
   }
 

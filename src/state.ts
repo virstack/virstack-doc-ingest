@@ -5,11 +5,11 @@ import { Annotation } from "@langchain/langgraph";
  * Every node reads from and writes to this shared state.
  */
 export const PipelineStateAnnotation = Annotation.Root({
-  /** Absolute path to the input file */
-  filePath: Annotation<string>,
+  /** Absolute path to the input file (optional if rawText is provided) */
+  filePath: Annotation<string | undefined>,
 
-  /** Detected MIME type of the input file */
-  mimeType: Annotation<string>,
+  /** Detected MIME type of the input file (optional if rawText is provided) */
+  mimeType: Annotation<string | undefined>,
 
   /** Extracted raw text (office / text branch) */
   rawText: Annotation<string>,

@@ -12,15 +12,15 @@ export async function saveMarkdown(
 ): Promise<Partial<PipelineState>> {
   const { filePath, markdown } = state;
 
-  // Generate unique ID for this document
-  const docId = crypto
-    .createHash("sha256")
-    .update(filePath)
+  // Create a unique hash for the output folder
+  const fileHash = crypto
+    .createHash("md5")
+    .update(state.filePath || "pasted_text")
     .digest("hex")
     .slice(0, 16);
 
-  const baseName = path.parse(filePath).name;
-  const outputDir = path.resolve(process.cwd(), "outputs", `${baseName}_${docId}`);
+  const baseName = state.filePath ? path.parse(state.filePath).name : "pasted_text";
+  const outputDir = path.resolve(process.cwd(), "outputs", `${baseName}_${fileHash}`);
   const outputPath = path.join(outputDir, "full_content.md");
 
   console.log(`[saveMarkdown] Saving to: ${outputPath}`);

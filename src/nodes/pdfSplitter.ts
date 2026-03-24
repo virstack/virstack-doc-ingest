@@ -11,6 +11,7 @@ import type { PipelineState } from "../state.js";
 export async function pdfSplitter(
   state: PipelineState,
 ): Promise<Partial<PipelineState>> {
+  if (!state.filePath) throw new Error("[pdfSplitter] filePath is missing");
   const fullPath = path.resolve(process.cwd(), state.filePath);
   console.log(`[pdfSplitter] Reading file at: ${fullPath}`);
 

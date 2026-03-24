@@ -25,6 +25,7 @@ export async function libreOfficeToPdf(
   state: PipelineState,
 ): Promise<Partial<PipelineState>> {
   const sofficePath = getSofficePath();
+  if (!state.filePath) throw new Error("[libreOfficeToPdf] filePath is missing");
   const inputPath = path.resolve(process.cwd(), state.filePath);
   const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "lo-pdf-"));
 

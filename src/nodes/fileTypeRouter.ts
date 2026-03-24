@@ -9,6 +9,15 @@ import type { PipelineState } from "../state.js";
 export async function fileTypeRouter(
   state: PipelineState,
 ): Promise<Partial<PipelineState>> {
+  if (state.rawText && !state.filePath) {
+    console.log("[fileTypeRouter] Direct text input detected (no file)");
+    return { mimeType: "text/plain" };
+  }
+
+  if (!state.filePath) {
+    throw new Error("[fileTypeRouter] Either filePath or rawText must be provided.");
+  }
+
   const ext = path.extname(state.filePath).toLowerCase();
   const detected = mime.lookup(ext) || "application/octet-stream";
 
@@ -27,6 +36,11 @@ export async function fileTypeRouter(
  *  "extract" → textExtractorNode (XLSX, CSV, XLS, TXT, HTML)
  */
 export function routeByMimeType(state: PipelineState): string {
+  // If text is already extracted, go straight to Gemini
+  if (state.rawText && !state.filePath) {
+    return "extract";
+  }
+
   const mime = state.mimeType;
 
   if (mime === "application/pdf") {
@@ -48,7 +62,7 @@ export function routeByMimeType(state: PipelineState): string {
     "application/vnd.oasis.opendocument.presentation",                          // ODP
   ];
 
-  if (libreOfficeTypes.includes(mime)) {
+  if (mime && libreOfficeTypes.includes(mime)) {
     return "convert";
   }
 
@@ -59,7 +73,7 @@ export function routeByMimeType(state: PipelineState): string {
     "text/csv",
   ];
 
-  if (officeTypes.includes(mime)) {
+  if (mime && officeTypes.includes(mime)) {
     return "extract";
   }
 
