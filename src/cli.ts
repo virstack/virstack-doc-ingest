@@ -2,21 +2,27 @@
 import "dotenv/config";
 import path from "node:path";
 import fs from "node:fs/promises";
-import { initializeConfig } from "./config.js";
+import { initializeConfig, getEnvConfig, pipelineConfig } from "./config.js";
 import { batchGraph } from "./index.js";
-
-// We read this local var for batch invoke, OR we can read from our pipeline object, but since the CLI handles the parsing:
-const MAX_CONCURRENT_FILES = parseInt(process.env.MAX_CONCURRENT_FILES || "3", 10);
 
 /* ------------------------------------------------------------------ */
 /*  Supported file extensions                                         */
 /* ------------------------------------------------------------------ */
 const SUPPORTED_EXTENSIONS = new Set([
   ".pdf",
-  ".docx", ".doc", ".rtf", ".odt", ".epub",
-  ".pptx", ".ppt", ".odp",
-  ".xlsx", ".xls", ".csv",
-  ".txt", ".html",
+  ".docx",
+  ".doc",
+  ".rtf",
+  ".odt",
+  ".epub",
+  ".pptx",
+  ".ppt",
+  ".odp",
+  ".xlsx",
+  ".xls",
+  ".csv",
+  ".txt",
+  ".html",
 ]);
 
 /* ------------------------------------------------------------------ */
@@ -24,17 +30,12 @@ const SUPPORTED_EXTENSIONS = new Set([
 /* ------------------------------------------------------------------ */
 async function main() {
   try {
-    initializeConfig({
-      openRouterApiKey: process.env.OPENROUTER_API_KEY as string,
-      upstashUrl: process.env.UPSTASH_VECTOR_URL as string,
-      upstashToken: process.env.UPSTASH_VECTOR_TOKEN as string,
-      llmModel: process.env.LLM_MODEL as string,
-      embeddingModel: process.env.EMBEDDING_MODEL as string,
-      maxConcurrentFiles: parseInt(process.env.MAX_CONCURRENT_FILES || "3", 10),
-      maxConcurrentApi: parseInt(process.env.MAX_CONCURRENT_API_CALLS || "15", 10),
-    });
+    // 1. Initialize using environment variables from config.js
+    initializeConfig(getEnvConfig());
   } catch (error: any) {
-    console.error("Initialization failed: Missing required environments parameters in .env file.");
+    console.error(
+      "Initialization failed: Missing required parameters in .env file.",
+    );
     process.exit(1);
   }
 
@@ -93,7 +94,7 @@ async function main() {
   // Use the native Batch Orchestrator graph WITH a concurrency limit
   const batchResult = await batchGraph.invoke(
     { files: filesToProcess },
-    { maxConcurrency: MAX_CONCURRENT_FILES }
+    { maxConcurrency: pipelineConfig.maxConcurrentFiles },
   );
 
   const results = batchResult.results;
@@ -108,12 +109,20 @@ async function main() {
     const succeeded = results.filter((r: any) => r.status === "success");
     const failed = results.filter((r: any) => r.status === "error");
 
-    console.log(`\n  Results: ${succeeded.length} succeeded, ${failed.length} failed\n`);
+    console.log(
+      `\n  Results: ${succeeded.length} succeeded, ${failed.length} failed\n`,
+    );
 
     // Summary table
-    console.log("  ┌─────────────────────────────────────────┬──────────┬────────┬─────────┬──────────┐");
-    console.log("  │ File                                    │ Status   │ Chunks │ Vectors │ Duration │");
-    console.log("  ├─────────────────────────────────────────┼──────────┼────────┼─────────┼──────────┤");
+    console.log(
+      "  ┌─────────────────────────────────────────┬──────────┬────────┬─────────┬──────────┐",
+    );
+    console.log(
+      "  │ File                                    │ Status   │ Chunks │ Vectors │ Duration │",
+    );
+    console.log(
+      "  ├─────────────────────────────────────────┼──────────┼────────┼─────────┼──────────┤",
+    );
 
     for (const r of results) {
       const file = r.file.padEnd(39).slice(0, 39);
@@ -121,10 +130,14 @@ async function main() {
       const chunks = String(r.chunks).padStart(6);
       const vectors = String(r.vectors).padStart(7);
       const duration = `${r.durationSec}s`.padStart(8);
-      console.log(`  │ ${file} │ ${status} │ ${chunks} │ ${vectors} │ ${duration} │`);
+      console.log(
+        `  │ ${file} │ ${status} │ ${chunks} │ ${vectors} │ ${duration} │`,
+      );
     }
 
-    console.log("  └─────────────────────────────────────────┴──────────┴────────┴─────────┴──────────┘");
+    console.log(
+      "  └─────────────────────────────────────────┴──────────┴────────┴─────────┴──────────┘",
+    );
 
     if (failed.length > 0) {
       console.log("\n  Failed files:");

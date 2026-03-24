@@ -75,7 +75,7 @@ export async function geminiExtraction(
         { role: "system", content: finalSystemPrompt },
         { role: "user", content: userContent },
       ],
-      max_tokens: 16384,
+      max_tokens: pipelineConfig.maxTokens,
       temperature: 0,
     })
   );
