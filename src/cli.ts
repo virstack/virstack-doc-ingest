@@ -13,15 +13,22 @@ import figlet from "figlet";
 // Import the setLogger function
 import { setLogger } from "./core/logger.js";
 
+// Detect verbose flag
+const isVerbose = process.argv.includes("--verbose");
+
 // --- INJECT CLACK LOGGER ---
 // This ensures that all internal pipeline logs are formatted beautifully
 // and don't break the loading spinner!
 setLogger({
   info: (source, message) => {
-    log.message(`${color.cyan(`[${source}]`)} ${color.dim(message)}`);
+    if (isVerbose) {
+      log.message(`${color.cyan(`[${source}]`)} ${color.dim(message)}`);
+    }
   },
   success: (source, message) => {
-    log.message(`${color.green(`[${source}]`)} ${message}`);
+    if (isVerbose) {
+      log.message(`${color.green(`[${source}]`)} ${message}`);
+    }
   },
   warn: (source, message) => {
     log.warn(`${color.yellow(`[${source}]`)} ${message}`);
@@ -45,7 +52,8 @@ async function main() {
 
   intro(color.bgCyan(color.black(" Welcome to the RAG Ingestion Pipeline ")));
 
-  let targetPath = process.argv[2];
+  // Improved argument parsing: Get the first non-flag argument as the path
+  let targetPath = process.argv.slice(2).find((arg) => !arg.startsWith("-"));
 
   if (!targetPath) {
     const inputPath = await text({

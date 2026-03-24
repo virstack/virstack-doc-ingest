@@ -60,6 +60,9 @@ rag-ingest ./documents/contract.pdf
 
 # Process a whole folder
 rag-ingest ./documents/
+
+# See detailed processing logs
+rag-ingest ./documents/ --verbose
 ```
 
 ---
