@@ -2,7 +2,7 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import { graph as batchGraph } from "./batchPipeline.js";
 import { buildPipeline } from "./pipeline.js";
-import { CONCURRENCY_LIMIT } from "./config.js";
+import { MAX_CONCURRENT_FILES } from "./config.js";
 
 /* ------------------------------------------------------------------ */
 /*  Supported file extensions                                         */
@@ -71,10 +71,11 @@ async function main() {
 
   const batchStart = Date.now();
 
-  // Use the native Batch Orchestrator graph
-  const batchResult = await batchGraph.invoke({ 
-    files: filesToProcess 
-  });
+  // Use the native Batch Orchestrator graph WITH a concurrency limit
+  const batchResult = await batchGraph.invoke(
+    { files: filesToProcess },
+    { maxConcurrency: MAX_CONCURRENT_FILES }
+  );
 
   const results = batchResult.results;
   const totalElapsed = ((Date.now() - batchStart) / 1000).toFixed(1);

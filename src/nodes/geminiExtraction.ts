@@ -1,5 +1,9 @@
-import { openrouter, LLM_MODEL } from "../config.js";
+import pLimit from "p-limit";
+import { openrouter, LLM_MODEL, MAX_CONCURRENT_API_CALLS } from "../config.js";
 import type { PipelineState } from "../state.js";
+
+// Global API rate limiter to prevent 429 errors from OpenRouter
+const apiLimit = pLimit(MAX_CONCURRENT_API_CALLS);
 
 const SYSTEM_PROMPT = `You are an expert document extraction and formatting AI. Your task is to extract the exact, verbatim content from the provided document and convert it entirely into standard Markdown format. 
 
@@ -38,30 +42,32 @@ export async function geminiExtraction(
       `[geminiExtraction] Processing PDF chunk ${index + 1}/${totalChunks} (${((base64.length * 0.75) / 1024).toFixed(0)} KB)`
     );
 
-    const response = await openrouter.chat.completions.create({
-      model: LLM_MODEL,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        {
-          role: "user",
-          content: [
-            {
-              type: "file" as any,
-              file: {
-                filename: `chunk_${index + 1}.pdf`,
-                file_data: `data:application/pdf;base64,${base64}`,
+    const response = await apiLimit(() =>
+      openrouter.chat.completions.create({
+        model: LLM_MODEL,
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          {
+            role: "user",
+            content: [
+              {
+                type: "file" as any,
+                file: {
+                  filename: `chunk_${index + 1}.pdf`,
+                  file_data: `data:application/pdf;base64,${base64}`,
+                },
+              } as any,
+              {
+                type: "text",
+                text: `Extract all content from this PDF (chunk ${index + 1} of ${totalChunks}) into clean Markdown.`,
               },
-            } as any,
-            {
-              type: "text",
-              text: `Extract all content from this PDF (chunk ${index + 1} of ${totalChunks}) into clean Markdown.`,
-            },
-          ],
-        },
-      ],
-      max_tokens: 16384,
-      temperature: 0,
-    });
+            ],
+          },
+        ],
+        max_tokens: 16384,
+        temperature: 0,
+      })
+    );
 
     const markdown = response.choices[0]?.message?.content?.trim() ?? "";
 
@@ -78,18 +84,20 @@ export async function geminiExtraction(
       `[geminiExtraction] Sending ${state.rawText.length} chars to ${LLM_MODEL}`
     );
 
-    const response = await openrouter.chat.completions.create({
-      model: LLM_MODEL,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        {
-          role: "user",
-          content: `Convert the following extracted document text into clean Markdown:\n\n${state.rawText}`,
-        },
-      ],
-      max_tokens: 16384,
-      temperature: 0,
-    });
+    const response = await apiLimit(() =>
+      openrouter.chat.completions.create({
+        model: LLM_MODEL,
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          {
+            role: "user",
+            content: `Convert the following extracted document text into clean Markdown:\n\n${state.rawText}`,
+          },
+        ],
+        max_tokens: 16384,
+        temperature: 0,
+      })
+    );
 
     const markdown = response.choices[0]?.message?.content?.trim() ?? "";
 

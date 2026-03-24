@@ -32,8 +32,11 @@ export const CHUNK_OVERLAP = 100;
 /** Number of pages per PDF sub-chunk for Gemini processing */
 export const PDF_PAGES_PER_CHUNK = 10;
 
-/** Max documents to process concurrently in batch mode */
-export const CONCURRENCY_LIMIT = parseInt(process.env.CONCURRENCY_LIMIT || "5", 10);
+/** Max files to process concurrently (Local CPU/RAM limit) */
+export const MAX_CONCURRENT_FILES = parseInt(process.env.MAX_CONCURRENT_FILES || "3", 10);
+
+/** Max parallel API requests globally (Network/Rate limit) */
+export const MAX_CONCURRENT_API_CALLS = parseInt(process.env.MAX_CONCURRENT_API_CALLS || "15", 10);
 
 /* ------------------------------------------------------------------ */
 /*  Clients                                                           */
