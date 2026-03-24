@@ -1,4 +1,4 @@
-import { openrouter, EMBEDDING_MODEL } from "../config.js";
+import { openrouter, pipelineConfig, requireInit } from "../config.js";
 import type { PipelineState } from "../state.js";
 
 /** Maximum chunks to embed in a single OpenAI API call */
@@ -11,10 +11,11 @@ const BATCH_SIZE = 50;
 export async function openrouterEmbedder(
   state: PipelineState,
 ): Promise<Partial<PipelineState>> {
+  requireInit();
   const { textChunks } = state;
 
   console.log(
-    `[openaiEmbedder] Embedding ${textChunks.length} chunks with ${EMBEDDING_MODEL}`,
+    `[openaiEmbedder] Embedding ${textChunks.length} chunks with ${pipelineConfig.embeddingModel}`,
   );
 
   const allVectors: number[][] = [];
@@ -27,7 +28,7 @@ export async function openrouterEmbedder(
     );
 
     const response = await openrouter.embeddings.create({
-      model: EMBEDDING_MODEL,
+      model: pipelineConfig.embeddingModel,
       input: batch,
       dimensions: 1536,
     } as any); // Cast to any as 'dimensions' might not be in the basic OpenAI type for all SDK versions

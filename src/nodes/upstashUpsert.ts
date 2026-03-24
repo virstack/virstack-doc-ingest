@@ -1,6 +1,6 @@
 import path from "node:path";
 import crypto from "node:crypto";
-import { vectorIndex } from "../config.js";
+import { vectorIndex, requireInit } from "../config.js";
 import type { PipelineState } from "../state.js";
 
 /**
@@ -10,6 +10,7 @@ import type { PipelineState } from "../state.js";
 export async function upstashUpsert(
   state: PipelineState,
 ): Promise<Partial<PipelineState>> {
+  requireInit();
   const { filePath, mimeType, textChunks, vectors } = state;
 
   // Generate a stable document ID from the file path

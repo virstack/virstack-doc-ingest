@@ -1,9 +1,5 @@
-import pLimit from "p-limit";
-import { openrouter, LLM_MODEL, MAX_CONCURRENT_API_CALLS } from "../config.js";
+import { openrouter, pipelineConfig, apiLimit, requireInit } from "../config.js";
 import type { PipelineState } from "../state.js";
-
-// Global API rate limiter to prevent 429 errors from OpenRouter
-const apiLimit = pLimit(MAX_CONCURRENT_API_CALLS);
 
 const SYSTEM_PROMPT = `You are an expert document extraction and formatting AI. Your task is to extract the exact, verbatim content from the provided document and convert it entirely into standard Markdown format. 
 
@@ -34,6 +30,8 @@ export async function geminiExtraction(
   state: Partial<PipelineState> & { chunk?: string; index?: number; totalChunks?: number }
 ): Promise<Partial<PipelineState>> {
 
+  requireInit();
+
   // Case 1: PDF Chunk (Vision)
   if (state.chunk !== undefined && state.index !== undefined && state.totalChunks !== undefined) {
     const { chunk: base64, totalChunks, index } = state;
@@ -44,7 +42,7 @@ export async function geminiExtraction(
 
     const response = await apiLimit(() =>
       openrouter.chat.completions.create({
-        model: LLM_MODEL,
+        model: pipelineConfig.llmModel,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           {
@@ -81,12 +79,12 @@ export async function geminiExtraction(
   // Case 2: Raw Text (Text/Data branch)
   if (state.rawText) {
     console.log(
-      `[geminiExtraction] Sending ${state.rawText.length} chars to ${LLM_MODEL}`
+      `[geminiExtraction] Sending ${state.rawText.length} chars to ${pipelineConfig.llmModel}`
     );
 
     const response = await apiLimit(() =>
       openrouter.chat.completions.create({
-        model: LLM_MODEL,
+        model: pipelineConfig.llmModel,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           {

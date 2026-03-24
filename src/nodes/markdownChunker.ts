@@ -1,5 +1,5 @@
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
-import { CHUNK_SIZE, CHUNK_OVERLAP } from "../config.js";
+import { pipelineConfig, requireInit } from "../config.js";
 import type { PipelineState } from "../state.js";
 
 /**
@@ -10,13 +10,14 @@ import type { PipelineState } from "../state.js";
 export async function markdownChunker(
   state: PipelineState,
 ): Promise<Partial<PipelineState>> {
+  requireInit();
   const { markdown } = state;
 
   console.log(`[markdownChunker] Input: ${markdown.length} chars`);
 
   const splitter = new RecursiveCharacterTextSplitter({
-    chunkSize: CHUNK_SIZE,
-    chunkOverlap: CHUNK_OVERLAP,
+    chunkSize: pipelineConfig.chunkSize,
+    chunkOverlap: pipelineConfig.chunkOverlap,
     // Optimal separators for Markdown
     separators: ["\n\n", "\n", " ", ""],
   });

@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { PDFDocument } from "pdf-lib";
-import { PDF_PAGES_PER_CHUNK } from "../config.js";
+import { pipelineConfig, requireInit } from "../config.js";
 import type { PipelineState } from "../state.js";
 
 /**
@@ -11,6 +11,7 @@ import type { PipelineState } from "../state.js";
 export async function pdfSplitter(
   state: PipelineState,
 ): Promise<Partial<PipelineState>> {
+  requireInit();
   if (!state.filePath) throw new Error("[pdfSplitter] filePath is missing");
   const fullPath = path.resolve(process.cwd(), state.filePath);
   console.log(`[pdfSplitter] Reading file at: ${fullPath}`);
@@ -26,13 +27,13 @@ export async function pdfSplitter(
 
   console.log(`[pdfSplitter] Total pages: ${totalPages}`);
   console.log(
-    `[pdfSplitter] Splitting into chunks of ${PDF_PAGES_PER_CHUNK} pages`,
+    `[pdfSplitter] Splitting into chunks of ${pipelineConfig.pdfPagesPerChunk} pages`,
   );
 
   const chunks: string[] = [];
 
-  for (let start = 0; start < totalPages; start += PDF_PAGES_PER_CHUNK) {
-    const end = Math.min(start + PDF_PAGES_PER_CHUNK, totalPages);
+  for (let start = 0; start < totalPages; start += pipelineConfig.pdfPagesPerChunk) {
+    const end = Math.min(start + pipelineConfig.pdfPagesPerChunk, totalPages);
     const subDoc = await PDFDocument.create();
 
     const copiedPages = await subDoc.copyPages(

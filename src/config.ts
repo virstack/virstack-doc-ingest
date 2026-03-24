@@ -1,56 +1,63 @@
-import "dotenv/config";
 import { OpenAI } from "openai";
-import { Index, type IndexConfig } from "@upstash/vector";
+import { Index } from "@upstash/vector";
+import pLimit from "p-limit";
 
-/* ------------------------------------------------------------------ */
-/*  Environment validation                                            */
-/* ------------------------------------------------------------------ */
-function requireEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-  return value.trim();
+// 1. Define what the user can configure
+export interface RagPipelineConfig {
+  openRouterApiKey: string;
+  upstashUrl: string;
+  upstashToken: string;
+  llmModel?: string;
+  embeddingModel?: string;
+  chunkSize?: number;
+  chunkOverlap?: number;
+  pdfPagesPerChunk?: number;
+  maxConcurrentFiles?: number;
+  maxConcurrentApi?: number;
 }
 
-/* ------------------------------------------------------------------ */
-/*  Constants                                                         */
-/* ------------------------------------------------------------------ */
+// 2. Hold the global clients and settings
+export let openrouter: OpenAI;
+export let vectorIndex: Index;
+export let pipelineConfig: Required<RagPipelineConfig>;
 
-/** LLM model identifier on OpenRouter */
-export const LLM_MODEL = requireEnv("LLM_MODEL");
+// Global API rate limiter initialized lazily
+export let apiLimit: ReturnType<typeof pLimit>;
 
-/** Embedding model used via OpenRouter */
-export const EMBEDDING_MODEL = requireEnv("EMBEDDING_MODEL");
+// 3. Create the initialization function
+export function initializeConfig(config: RagPipelineConfig) {
+  // Apply defaults for optional fields
+  pipelineConfig = {
+    openRouterApiKey: config.openRouterApiKey,
+    upstashUrl: config.upstashUrl,
+    upstashToken: config.upstashToken,
+    llmModel: config.llmModel || "google/gemini-2.5-pro",
+    embeddingModel: config.embeddingModel || "text-embedding-3-large",
+    chunkSize: config.chunkSize || 1000,
+    chunkOverlap: config.chunkOverlap || 100,
+    pdfPagesPerChunk: config.pdfPagesPerChunk || 10,
+    maxConcurrentFiles: config.maxConcurrentFiles || 3,
+    maxConcurrentApi: config.maxConcurrentApi || 15,
+  };
 
-/** Document chunk size (characters) */
-export const CHUNK_SIZE = 1000;
+  // Initialize clients with the provided keys
+  openrouter = new OpenAI({
+    baseURL: "https://openrouter.ai/api/v1",
+    apiKey: pipelineConfig.openRouterApiKey,
+    maxRetries: 5,
+  });
 
-/** Document chunk overlap (characters) */
-export const CHUNK_OVERLAP = 100;
+  vectorIndex = new Index({
+    url: pipelineConfig.upstashUrl,
+    token: pipelineConfig.upstashToken,
+  });
 
-/** Number of pages per PDF sub-chunk for Gemini processing */
-export const PDF_PAGES_PER_CHUNK = 10;
+  apiLimit = pLimit(pipelineConfig.maxConcurrentApi);
+}
 
-/** Max files to process concurrently (Local CPU/RAM limit) */
-export const MAX_CONCURRENT_FILES = parseInt(process.env.MAX_CONCURRENT_FILES || "3", 10);
-
-/** Max parallel API requests globally (Network/Rate limit) */
-export const MAX_CONCURRENT_API_CALLS = parseInt(process.env.MAX_CONCURRENT_API_CALLS || "15", 10);
-
-/* ------------------------------------------------------------------ */
-/*  Clients                                                           */
-/* ------------------------------------------------------------------ */
-
-/** OpenRouter client (used for both chat completions and embeddings) */
-export const openrouter = new OpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: requireEnv("OPENROUTER_API_KEY"),
-  maxRetries: 5,
-});
-
-/** Upstash Vector index (1536-d for text-embedding-3-small) */
-export const vectorIndex: Index = new Index({
-  url: requireEnv("UPSTASH_VECTOR_URL"),
-  token: requireEnv("UPSTASH_VECTOR_TOKEN"),
-});
+// Helper to ensure config is loaded before a node runs
+export function requireInit() {
+  if (!openrouter || !vectorIndex || !pipelineConfig) {
+    throw new Error("RAG Pipeline not initialized. Call initializeConfig() first.");
+  }
+}
