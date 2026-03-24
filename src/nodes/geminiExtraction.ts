@@ -1,7 +1,7 @@
 import { openrouter, pipelineConfig, apiLimit, requireInit } from "../config.js";
 import type { PipelineState } from "../state.js";
 
-const SYSTEM_PROMPT = `You are an expert document extraction and formatting AI. Your task is to extract the exact, verbatim content from the provided document and convert it entirely into standard Markdown format. 
+const DEFAULT_SYSTEM_PROMPT = `You are an expert document extraction and formatting AI. Your task is to extract the exact, verbatim content from the provided document and convert it entirely into standard Markdown format. 
 
 You must strictly adhere to the following rules:
 
@@ -32,81 +32,65 @@ export async function geminiExtraction(
 
   requireInit();
 
-  // Case 1: PDF Chunk (Vision)
-  if (state.chunk !== undefined && state.index !== undefined && state.totalChunks !== undefined) {
+  const isChunkFlow = state.chunk !== undefined && state.index !== undefined && state.totalChunks !== undefined;
+  const isTextFlow = !!state.rawText;
+
+  if (!isChunkFlow && !isTextFlow) {
+    throw new Error("[geminiExtraction] Neither chunk nor rawText was provided in the state.");
+  }
+
+  let userContent: any;
+
+  if (isChunkFlow) {
     const { chunk: base64, totalChunks, index } = state;
-
     console.log(
-      `[geminiExtraction] Processing PDF chunk ${index + 1}/${totalChunks} (${((base64.length * 0.75) / 1024).toFixed(0)} KB)`
+      `[geminiExtraction] Processing PDF chunk ${index! + 1}/${totalChunks} (${((base64!.length * 0.75) / 1024).toFixed(0)} KB)`
     );
-
-    const response = await apiLimit(() =>
-      openrouter.chat.completions.create({
-        model: pipelineConfig.llmModel,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          {
-            role: "user",
-            content: [
-              {
-                type: "file" as any,
-                file: {
-                  filename: `chunk_${index + 1}.pdf`,
-                  file_data: `data:application/pdf;base64,${base64}`,
-                },
-              } as any,
-              {
-                type: "text",
-                text: `Extract all content from this PDF (chunk ${index + 1} of ${totalChunks}) into clean Markdown.`,
-              },
-            ],
-          },
-        ],
-        max_tokens: 16384,
-        temperature: 0,
-      })
-    );
-
-    const markdown = response.choices[0]?.message?.content?.trim() ?? "";
-
+    userContent = [
+      {
+        type: "file" as any,
+        file: {
+          filename: `chunk_${index! + 1}.pdf`,
+          file_data: `data:application/pdf;base64,${base64}`,
+        },
+      } as any,
+      {
+        type: "text",
+        text: `Extract all content from this PDF (chunk ${index! + 1} of ${totalChunks}) into clean Markdown.`,
+      },
+    ];
+  } else {
     console.log(
-      `[geminiExtraction] Chunk ${index + 1}/${totalChunks} extracted (${markdown.length} chars)`
+      `[geminiExtraction] Sending ${state.rawText!.length} chars to ${pipelineConfig.llmModel}`
     );
+    userContent = `Convert the following extracted document text into clean Markdown:\n\n${state.rawText}`;
+  }
 
+  const finalSystemPrompt = pipelineConfig.systemPrompt || DEFAULT_SYSTEM_PROMPT;
+
+  const response = await apiLimit(() =>
+    openrouter.chat.completions.create({
+      model: pipelineConfig.llmModel,
+      messages: [
+        { role: "system", content: finalSystemPrompt },
+        { role: "user", content: userContent },
+      ],
+      max_tokens: 16384,
+      temperature: 0,
+    })
+  );
+
+  const markdown = response.choices[0]?.message?.content?.trim() ?? "";
+
+  if (isChunkFlow) {
+    console.log(
+      `[geminiExtraction] Chunk ${state.index! + 1}/${state.totalChunks} extracted (${markdown.length} chars)`
+    );
     return { markdownParts: [markdown] };
   }
 
-  // Case 2: Raw Text (Text/Data branch)
-  if (state.rawText) {
-    console.log(
-      `[geminiExtraction] Sending ${state.rawText.length} chars to ${pipelineConfig.llmModel}`
-    );
-
-    const response = await apiLimit(() =>
-      openrouter.chat.completions.create({
-        model: pipelineConfig.llmModel,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          {
-            role: "user",
-            content: `Convert the following extracted document text into clean Markdown:\n\n${state.rawText}`,
-          },
-        ],
-        max_tokens: 16384,
-        temperature: 0,
-      })
-    );
-
-    const markdown = response.choices[0]?.message?.content?.trim() ?? "";
-
-    console.log(
-      `[geminiExtraction] Extracted markdown: ${markdown.length} chars`
-    );
-
-    return { markdown };
-  }
-
-  throw new Error("[geminiExtraction] Neither chunk nor rawText was provided in the state.");
+  console.log(`[geminiExtraction] Extracted markdown: ${markdown.length} chars`);
+  return { markdown };
 }
 
 /**

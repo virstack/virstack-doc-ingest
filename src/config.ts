@@ -14,6 +14,7 @@ export interface RagPipelineConfig {
   pdfPagesPerChunk?: number;
   maxConcurrentFiles?: number;
   maxConcurrentApi?: number;
+  systemPrompt?: string;
 }
 
 // 2. Hold the global clients and settings
@@ -38,7 +39,8 @@ export function initializeConfig(config: RagPipelineConfig) {
     pdfPagesPerChunk: config.pdfPagesPerChunk || 10,
     maxConcurrentFiles: config.maxConcurrentFiles || 3,
     maxConcurrentApi: config.maxConcurrentApi || 15,
-  };
+    systemPrompt: config.systemPrompt,
+  } as Required<RagPipelineConfig>;
 
   // Initialize clients with the provided keys
   openrouter = new OpenAI({
