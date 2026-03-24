@@ -1,7 +1,8 @@
 {
   "node_version": "20",
   "graphs": {
-    "agent": "./src/pipeline.ts:graph"
+    "agent": "./src/pipeline.ts:graph",
+    "batch": "./src/batchPipeline.ts:graph"
   },
   "env": ".env",
   "dependencies": ["."],
