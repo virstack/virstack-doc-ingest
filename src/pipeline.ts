@@ -2,11 +2,10 @@ import { StateGraph, END, Send } from "@langchain/langgraph";
 import { PipelineStateAnnotation, type PipelineState } from "./state.js";
 import { fileTypeRouter, routeByMimeType } from "./nodes/fileTypeRouter.js";
 import { pdfSplitter } from "./nodes/pdfSplitter.js";
-import { processPdfChunk } from "./nodes/processPdfChunk.js";
+import { geminiExtraction, routeAfterGemini } from "./nodes/geminiExtraction.js";
 import { markdownMerger } from "./nodes/markdownMerger.js";
 
 import { textExtractorNode } from "./nodes/textExtractorNode.js";
-import { geminiExtraction } from "./nodes/geminiExtraction.js";
 import { markdownNormalizer } from "./nodes/markdownNormalizer.js";
 import { markdownChunker } from "./nodes/markdownChunker.js";
 import { openrouterEmbedder } from "./nodes/openrouterEmbedder.js";
@@ -19,7 +18,7 @@ import { libreOfficeToPdf } from "./nodes/libreOfficeToPdf.js";
  *
  * Flow:
  *   START → fileTypeRouter
- *     ├─ "pdf"     → pdfSplitter → [processPdfChunk (Parallel)] → markdownMerger → markdownNormalizer
+ *     ├─ "pdf"     → pdfSplitter → [geminiExtraction (Parallel)] → markdownMerger → markdownNormalizer
  *     ├─ "convert" → libreOfficeToPdf → pdfSplitter → (same as pdf branch)
  *     └─ "extract" → textExtractorNode → geminiExtraction → markdownNormalizer
  *   markdownNormalizer → saveMarkdown → markdownChunker → openrouterEmbedder → upstashUpsert → END
@@ -34,7 +33,7 @@ function dispatchPdfChunks(state: PipelineState) {
     return [];
   }
   return state.pdfChunks.map((chunk, index) => {
-    return new Send("processPdfChunk", {
+    return new Send("geminiExtraction", {
       chunk,
       index,
       totalChunks: state.pdfChunks.length,
@@ -49,7 +48,6 @@ export function buildPipeline() {
     // ── Phase 2a: PDF Branch ──
     .addNode("libreOfficeToPdf", libreOfficeToPdf)
     .addNode("pdfSplitter", pdfSplitter)
-    .addNode("processPdfChunk", processPdfChunk)
     .addNode("markdownMerger", markdownMerger)
 
     // ── Phase 2b: Text / Data Extraction Branch ──
@@ -79,14 +77,20 @@ export function buildPipeline() {
     // Convert branch: LibreOffice → pdfSplitter → (joins PDF branch)
     .addEdge("libreOfficeToPdf", "pdfSplitter")
 
-    // PDF branch flow
-    .addConditionalEdges("pdfSplitter", dispatchPdfChunks, ["processPdfChunk"])
-    .addEdge("processPdfChunk", "markdownMerger")
-    .addEdge("markdownMerger", "markdownNormalizer")
+    // PDF branch dispatcher
+    .addConditionalEdges("pdfSplitter", dispatchPdfChunks, ["geminiExtraction"])
 
-    // Document/text branch flow
+    // Unified Document/Text branch flow
     .addEdge("textExtractorNode", "geminiExtraction")
-    .addEdge("geminiExtraction", "markdownNormalizer")
+
+    // After geminiExtraction, conditionally merge PDF chunks or normalize Text
+    .addConditionalEdges("geminiExtraction", routeAfterGemini, {
+      markdownMerger: "markdownMerger",
+      markdownNormalizer: "markdownNormalizer",
+    })
+
+    // If PDF branch, finish merger
+    .addEdge("markdownMerger", "markdownNormalizer")
 
     // Shared tail: normalize → save → chunk → embed → upsert → end
     .addEdge("markdownNormalizer", "saveMarkdown")
