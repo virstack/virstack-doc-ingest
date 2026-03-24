@@ -24,8 +24,7 @@ export async function fileTypeRouter(
  *
  *  "pdf"     → direct PDF processing
  *  "convert" → LibreOffice → PDF → parallel extraction
- *  "office"  → officeparser (XLSX, CSV, XLS)
- *  "text"    → officeparser (TXT, HTML)
+ *  "extract" → textExtractorNode (XLSX, CSV, XLS, TXT, HTML)
  */
 export function routeByMimeType(state: PipelineState): string {
   const mime = state.mimeType;
@@ -61,16 +60,16 @@ export function routeByMimeType(state: PipelineState): string {
   ];
 
   if (officeTypes.includes(mime)) {
-    return "office";
+    return "extract";
   }
 
   if (mime === "text/plain" || mime === "text/html") {
-    return "text";
+    return "extract";
   }
 
   // Fallback: try to treat as text
   console.warn(
-    `[fileTypeRouter] Unknown MIME "${mime}", falling back to text branch`,
+    `[fileTypeRouter] Unknown MIME "${mime}", falling back to extract branch`,
   );
-  return "text";
+  return "extract";
 }

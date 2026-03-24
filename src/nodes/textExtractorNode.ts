@@ -7,12 +7,12 @@ import type { PipelineState } from "../state.js";
  * Extracts raw text from office documents (DOCX, PPTX, XLSX) using officeparser,
  * CSV files using csv-parse, and TXT files via direct read.
  */
-export async function officeparserNode(
+export async function textExtractorNode(
   state: PipelineState,
 ): Promise<Partial<PipelineState>> {
   const { filePath, mimeType } = state;
 
-  console.log(`[officeparserNode] Parsing: ${filePath} (${mimeType})`);
+  console.log(`[textExtractorNode] Parsing: ${filePath} (${mimeType})`);
 
   let rawText: string;
 
@@ -36,7 +36,7 @@ export async function officeparserNode(
   }
 
   console.log(
-    `[officeparserNode] Extracted ${rawText.length} chars of raw text`,
+    `[textExtractorNode] Extracted ${rawText.length} chars of raw text`,
   );
 
   return { rawText };

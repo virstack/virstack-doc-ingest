@@ -23,8 +23,11 @@ export const LLM_MODEL = requireEnv("LLM_MODEL");
 /** Embedding model used via OpenRouter */
 export const EMBEDDING_MODEL = requireEnv("EMBEDDING_MODEL");
 
-/** Max tokens per markdown chunk */
-export const MAX_CHUNK_TOKENS = 512;
+/** Document chunk size (characters) */
+export const CHUNK_SIZE = 1000;
+
+/** Document chunk overlap (characters) */
+export const CHUNK_OVERLAP = 100;
 
 /** Number of pages per PDF sub-chunk for Gemini processing */
 export const PDF_PAGES_PER_CHUNK = 10;

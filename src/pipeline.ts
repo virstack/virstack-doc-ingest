@@ -5,7 +5,7 @@ import { pdfSplitter } from "./nodes/pdfSplitter.js";
 import { processPdfChunk } from "./nodes/processPdfChunk.js";
 import { markdownMerger } from "./nodes/markdownMerger.js";
 
-import { officeparserNode } from "./nodes/officeparserNode.js";
+import { textExtractorNode } from "./nodes/textExtractorNode.js";
 import { geminiExtraction } from "./nodes/geminiExtraction.js";
 import { markdownNormalizer } from "./nodes/markdownNormalizer.js";
 import { markdownChunker } from "./nodes/markdownChunker.js";
@@ -21,8 +21,7 @@ import { libreOfficeToPdf } from "./nodes/libreOfficeToPdf.js";
  *   START → fileTypeRouter
  *     ├─ "pdf"     → pdfSplitter → [processPdfChunk (Parallel)] → markdownMerger → markdownNormalizer
  *     ├─ "convert" → libreOfficeToPdf → pdfSplitter → (same as pdf branch)
- *     ├─ "office"  → officeparserNode → geminiExtraction → markdownNormalizer
- *     └─ "text"    → officeparserNode → geminiExtraction → markdownNormalizer
+ *     └─ "extract" → textExtractorNode → geminiExtraction → markdownNormalizer
  *   markdownNormalizer → saveMarkdown → markdownChunker → openrouterEmbedder → upstashUpsert → END
  */
 
@@ -53,8 +52,8 @@ export function buildPipeline() {
     .addNode("processPdfChunk", processPdfChunk)
     .addNode("markdownMerger", markdownMerger)
 
-    // ── Phase 2b: Office / Text Branch ──
-    .addNode("officeparserNode", officeparserNode)
+    // ── Phase 2b: Text / Data Extraction Branch ──
+    .addNode("textExtractorNode", textExtractorNode)
     .addNode("geminiExtraction", geminiExtraction)
 
     // ── Phase 3: Normalization & Chunking ──
@@ -74,8 +73,7 @@ export function buildPipeline() {
     .addConditionalEdges("fileTypeRouter", routeByMimeType, {
       pdf: "pdfSplitter",
       convert: "libreOfficeToPdf",
-      office: "officeparserNode",
-      text: "officeparserNode",
+      extract: "textExtractorNode",
     })
 
     // Convert branch: LibreOffice → pdfSplitter → (joins PDF branch)
@@ -86,8 +84,8 @@ export function buildPipeline() {
     .addEdge("processPdfChunk", "markdownMerger")
     .addEdge("markdownMerger", "markdownNormalizer")
 
-    // Office/text branch flow
-    .addEdge("officeparserNode", "geminiExtraction")
+    // Document/text branch flow
+    .addEdge("textExtractorNode", "geminiExtraction")
     .addEdge("geminiExtraction", "markdownNormalizer")
 
     // Shared tail: normalize → save → chunk → embed → upsert → end

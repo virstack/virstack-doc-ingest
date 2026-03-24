@@ -9,20 +9,11 @@ const execFileAsync = promisify(execFile);
 
 /**
  * Resolves the LibreOffice soffice binary.
- * Checks SOFFICE_PATH env var first, then common install locations.
+ * Checks SOFFICE_PATH env var first, otherwise relies on system PATH.
  */
 function getSofficePath(): string {
   if (process.env.SOFFICE_PATH) return process.env.SOFFICE_PATH;
-
-  const candidates = [
-    "/Applications/LibreOffice.app/Contents/MacOS/soffice", // macOS
-    "/usr/bin/soffice",                                       // Linux
-    "/usr/local/bin/soffice",                                 // Linux (homebrew)
-    "soffice",                                                // In PATH
-  ];
-
-  // Return first that might exist; runtime will throw if none are valid
-  return candidates[0];
+  return "soffice"; // Default to whatever is in the PATH
 }
 
 /**
