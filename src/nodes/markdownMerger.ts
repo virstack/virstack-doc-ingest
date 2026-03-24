@@ -1,5 +1,5 @@
-import type { PipelineState } from "../state.js";
-import { logger, LogSource } from "../logger.js";
+import type { PipelineState } from "../core/state.js";
+import { logger, LogSource } from "../core/logger.js";
 
 /**
  * Joins markdownParts from the PDF branch into a single markdown string.

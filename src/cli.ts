@@ -2,7 +2,7 @@
 import "dotenv/config";
 import path from "node:path";
 import fs from "node:fs/promises";
-import { initializeConfig, getEnvConfig, pipelineConfig } from "./config.js";
+import { initializeConfig, getEnvConfig, pipelineConfig } from "./core/config.js";
 import { batchGraph } from "./index.js";
 
 /* ------------------------------------------------------------------ */

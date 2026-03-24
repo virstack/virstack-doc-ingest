@@ -1,6 +1,6 @@
-import { pipelineConfig, requireInit } from "../config.js";
-import type { PipelineState } from "../state.js";
-import { logger, LogSource } from "../logger.js";
+import { pipelineConfig, requireInit } from "../core/config.js";
+import type { PipelineState } from "../core/state.js";
+import { logger, LogSource } from "../core/logger.js";
 
 /**
  * Embeds all textChunks using the injected EmbeddingAdapter.

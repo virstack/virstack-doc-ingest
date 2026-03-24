@@ -1,7 +1,7 @@
 import { Annotation, StateGraph, Send, END } from "@langchain/langgraph";
-import { graph as singleDocGraph } from "./pipeline.js";
+import { graph as singleDocGraph } from "./singleDocument.js";
 import path from "node:path";
-import { logger, LogSource } from "./logger.js";
+import { logger, LogSource } from "../core/logger.js";
 
 /**
  * State for the batch document processing graph.

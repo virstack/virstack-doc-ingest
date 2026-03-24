@@ -1,8 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
-import type { PipelineState } from "../state.js";
-import { logger, LogSource } from "../logger.js";
+import type { PipelineState } from "../core/state.js";
+import { logger, LogSource } from "../core/logger.js";
 
 /**
  * Saves the final normalized markdown to a local file.

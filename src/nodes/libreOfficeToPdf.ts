@@ -3,8 +3,8 @@ import { promisify } from "node:util";
 import path from "node:path";
 import os from "node:os";
 import fs from "node:fs/promises";
-import type { PipelineState } from "../state.js";
-import { logger, LogSource } from "../logger.js";
+import type { PipelineState } from "../core/state.js";
+import { logger, LogSource } from "../core/logger.js";
 
 const execFileAsync = promisify(execFile);
 

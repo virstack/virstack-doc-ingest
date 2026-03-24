@@ -1,7 +1,7 @@
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
-import { pipelineConfig, requireInit } from "../config.js";
-import type { PipelineState } from "../state.js";
-import { logger, LogSource } from "../logger.js";
+import { pipelineConfig, requireInit } from "../core/config.js";
+import type { PipelineState } from "../core/state.js";
+import { logger, LogSource } from "../core/logger.js";
 
 /**
  * Splits markdown text into semantic chunks using LangChain's RecursiveCharacterTextSplitter.

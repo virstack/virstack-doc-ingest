@@ -1,17 +1,17 @@
 import { StateGraph, END, Send } from "@langchain/langgraph";
-import { PipelineStateAnnotation, type PipelineState } from "./state.js";
-import { fileTypeRouter, routeByMimeType } from "./nodes/fileTypeRouter.js";
-import { pdfSplitter } from "./nodes/pdfSplitter.js";
-import { llmExtractionNode, routeAfterLlm } from "./nodes/llmExtractionNode.js";
-import { markdownMerger } from "./nodes/markdownMerger.js";
+import { PipelineStateAnnotation, type PipelineState } from "../core/state.js";
+import { fileTypeRouter, routeByMimeType } from "../nodes/fileTypeRouter.js";
+import { pdfSplitter } from "../nodes/pdfSplitter.js";
+import { llmExtractionNode, routeAfterLlm } from "../nodes/llmExtractionNode.js";
+import { markdownMerger } from "../nodes/markdownMerger.js";
 
-import { textExtractorNode } from "./nodes/textExtractorNode.js";
-import { markdownNormalizer } from "./nodes/markdownNormalizer.js";
-import { markdownChunker } from "./nodes/markdownChunker.js";
-import { vectorEmbedderNode } from "./nodes/vectorEmbedderNode.js";
-import { vectorUpsertNode } from "./nodes/vectorUpsertNode.js";
-import { saveMarkdown } from "./nodes/saveMarkdown.js";
-import { libreOfficeToPdf } from "./nodes/libreOfficeToPdf.js";
+import { textExtractorNode } from "../nodes/textExtractorNode.js";
+import { markdownNormalizer } from "../nodes/markdownNormalizer.js";
+import { markdownChunker } from "../nodes/markdownChunker.js";
+import { vectorEmbedderNode } from "../nodes/vectorEmbedderNode.js";
+import { vectorUpsertNode } from "../nodes/vectorUpsertNode.js";
+import { saveMarkdown } from "../nodes/saveMarkdown.js";
+import { libreOfficeToPdf } from "../nodes/libreOfficeToPdf.js";
 
 /**
  * Builds and compiles the RAG ingestion pipeline as a LangGraph StateGraph.

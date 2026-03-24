@@ -1,7 +1,7 @@
 import path from "node:path";
 import mime from "mime-types";
-import type { PipelineState } from "../state.js";
-import { logger, LogSource } from "../logger.js";
+import type { PipelineState } from "../core/state.js";
+import { logger, LogSource } from "../core/logger.js";
 
 /**
  * Detects the MIME type of the input file and writes it to state.

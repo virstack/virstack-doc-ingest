@@ -1,7 +1,7 @@
-import { pipelineConfig, apiLimit, requireInit } from "../config.js";
-import type { PipelineState } from "../state.js";
-import { logger, LogSource } from "../logger.js";
-import type { LlmInput } from "../aiAdapters.js";
+import { pipelineConfig, apiLimit, requireInit } from "../core/config.js";
+import type { PipelineState } from "../core/state.js";
+import { logger, LogSource } from "../core/logger.js";
+import type { LlmInput } from "../adapters/aiAdapters.js";
 
 const DEFAULT_SYSTEM_PROMPT = `You are an expert document extraction and formatting AI. Your task is to extract the exact, verbatim content from the provided document and convert it entirely into standard Markdown format. 
 

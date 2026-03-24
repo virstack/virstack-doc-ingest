@@ -1,8 +1,8 @@
 import fs from "node:fs/promises";
 import officeparser from "officeparser";
 import { parse } from "csv-parse/sync";
-import type { PipelineState } from "../state.js";
-import { logger, LogSource } from "../logger.js";
+import type { PipelineState } from "../core/state.js";
+import { logger, LogSource } from "../core/logger.js";
 
 /**
  * Extracts raw text from office documents (DOCX, PPTX, XLSX) using officeparser,

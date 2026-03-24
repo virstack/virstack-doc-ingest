@@ -1,6 +1,6 @@
 import pLimit from "p-limit";
-import { UpstashAdapter, type VectorStoreAdapter } from "./vectorStore.js";
-import { type LlmAdapter, type EmbeddingAdapter, OpenRouterLlmAdapter, OpenRouterEmbeddingAdapter } from "./aiAdapters.js";
+import { UpstashAdapter, type VectorStoreAdapter } from "../adapters/vectorStore.js";
+import { type LlmAdapter, type EmbeddingAdapter, OpenRouterLlmAdapter, OpenRouterEmbeddingAdapter } from "../adapters/aiAdapters.js";
 
 // 1. Define what the user can configure
 export interface RagPipelineConfig {
@@ -19,7 +19,7 @@ export interface RagPipelineConfig {
 }
 
 // 2. Hold the global settings
-export let pipelineConfig: Required<RagPipelineConfig>;
+export let pipelineConfig: Required<RagPipelineConfig> = undefined as any;
 
 // Global API rate limiter initialized lazily
 export let apiLimit: ReturnType<typeof pLimit>;
@@ -119,4 +119,13 @@ export function getEnvConfig(): RagPipelineConfig {
       ? parseInt(process.env.MAX_TOKENS, 10)
       : undefined,
   };
+}
+
+// Auto-initialize for LangGraph Studio if running directly via the CLI/Studio
+if (typeof pipelineConfig === "undefined" && process.env.OPENROUTER_API_KEY) {
+  try {
+    initializeConfig(getEnvConfig());
+  } catch (e) {
+    console.warn("Auto-initialization for LangGraph Studio failed. Missing ENVs.");
+  }
 }

@@ -1,9 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { PDFDocument } from "pdf-lib";
-import { pipelineConfig, requireInit } from "../config.js";
-import type { PipelineState } from "../state.js";
-import { logger, LogSource } from "../logger.js";
+import { pipelineConfig, requireInit } from "../core/config.js";
+import type { PipelineState } from "../core/state.js";
+import { logger, LogSource } from "../core/logger.js";
 
 /**
  * Splits a PDF into sub-documents of PDF_PAGES_PER_CHUNK pages each.

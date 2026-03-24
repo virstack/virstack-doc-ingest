@@ -28,12 +28,12 @@ This package handles complex file routing, parallel chunking, LibreOffice conver
 
 Install globally to use as a CLI tool:
 ```bash
-npm install -g langchain-pipeline
+npm install -g rag-ingestion-pipeline
 ```
 
 Or install locally to use in your Node.js project:
 ```bash
-npm install langchain-pipeline
+npm install rag-ingestion-pipeline
 ```
 
 ---

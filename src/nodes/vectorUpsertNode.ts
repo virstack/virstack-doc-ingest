@@ -1,9 +1,9 @@
 import path from "node:path";
 import crypto from "node:crypto";
-import { pipelineConfig, requireInit } from "../config.js";
-import type { PipelineState } from "../state.js";
-import { logger, LogSource } from "../logger.js";
-import type { VectorRecord } from "../vectorStore.js";
+import { pipelineConfig, requireInit } from "../core/config.js";
+import type { PipelineState } from "../core/state.js";
+import { logger, LogSource } from "../core/logger.js";
+import type { VectorRecord } from "../adapters/vectorStore.js";
 
 /**
  * Upserts text chunks + their embedding vectors into a generic Vector Store Adapter.
