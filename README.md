@@ -1,48 +1,57 @@
 # 🚀 Virstack Doc Ingest
 
-A high-performance, parallelized document ingestion and vectorization pipeline for Retrieval-Augmented Generation. Built with **LangGraph**, powered by **Gemini / OpenRouter**, and indexed in **Upstash Vector**.
+**Virstack Doc Ingest** is a high-performance, parallelized document ingestion and vectorization pipeline designed for scalable Retrieval-Augmented Generation (RAG) applications. 
 
-This package handles complex file routing, parallel chunking, LibreOffice conversion, markdown normalization, and embeddings—all in one seamless flow.
-
-## ✨ Features
-* **Multi-Format Support:** PDF, DOCX, XLSX, PPTX, CSV, TXT, HTML, EPUB, and more.
-* **Dual Parallelism:** Processes multiple files concurrently and splits large PDFs into parallel Vision-API chunks.
-* **Smart Routing:** Automatically detects MIME types and routes files to the optimal extraction method.
-* **Two Ways to Use:** Run it directly from your terminal as a CLI tool, or import it into your Node.js application as a library.
+Powered by **LangGraph** for resilient orchestration, **OpenRouter / Gemini** for advanced vision/text extraction, and natively supporting **Upstash Vector** (with easily injectable custom adapters), this library acts as a universal bridge between your raw documents and your AI applications.
 
 ---
 
-## 🛠️ Prerequisites
+## ✨ Key Features
 
-**CRITICAL: LibreOffice is required for processing Office documents.** If you intend to process `.docx`, `.pptx`, `.rtf`, or `.epub` files, you must have LibreOffice installed on your system.
+- **Universal Multi-Format Support:** Natively processes PDF, DOCX, XLSX, PPTX, CSV, TXT, HTML, and EPUB files.
+- **Dual-Tier Parallelism:** Concurrently processes multiple files while simultaneously splitting and routing large PDFs into parallel Vision-API execution nodes.
+- **Smart Type Routing:** Automatically identifies MIME types and dynamically routes files to the most optimal, parser-specific extraction graph.
+- **Provider Agnostic Architecture:** Built entirely on Dependency Injection. Easily swap out LLMs, Embeddings, and Vector Databases (Pinecone, Qdrant, etc.) to fit your specific stack.
+- **Gorgeous TUI (Text User Interface):** Features a beautiful, interactive command-line interface with interactive menus and live, non-tearing spinners.
 
-* **macOS:** `brew install --cask libreoffice`
-* **Ubuntu/Debian:** `sudo apt-get install libreoffice`
-* **Windows:** Download from [libreoffice.org](https://www.libreoffice.org/)
+---
 
-*(Note: If you are only processing PDFs, CSVs, or TXT files, LibreOffice is not required.)*
+## 🛠️ System Prerequisites
+
+**IMPORTANT:** For parsing complex Office documents (e.g., `.docx`, `.pptx`, `.xlsx`, `.epub`), the pipeline relies on **LibreOffice** for high-fidelity conversion.
+
+If you are only parsing PDFs, TXT, or CSV files, LibreOffice is **not** required.
+
+### Installing LibreOffice:
+- **macOS:** `brew install --cask libreoffice`
+- **Ubuntu/Debian:** `sudo apt-get install libreoffice`
+- **Windows:** Download the installer from [libreoffice.org](https://www.libreoffice.org/)
 
 ---
 
 ## 📦 Installation
 
-Install globally to use as a CLI tool:
+You can install Virstack Doc Ingest globally to use as a standalone CLI tool, or locally to utilize its powerful API in your custom Node.js applications.
+
+### Global Install (CLI Usage)
 ```bash
 npm install -g virstack-doc-ingest
 ```
 
-Or install locally to use in your Node.js project:
+### Local Install (Library Usage)
 ```bash
 npm install virstack-doc-ingest
 ```
 
 ---
 
-## 💻 Usage: CLI Mode
+## 💻 Usage Mode 1: Interactive CLI
 
-When installed globally, you can run the pipeline directly from your terminal.
+The CLI offers a completely interactive, wizard-based experience.
 
-1. Create a `.env` file in your working directory with your API keys:
+### 1. Environment Configuration
+Create a `.env` file in the directory where you plan to run the command:
+
 ```env
 OPENROUTER_API_KEY=sk-or-v1-...
 UPSTASH_VECTOR_URL=https://...
@@ -53,27 +62,34 @@ MAX_CONCURRENT_FILES=3
 MAX_CONCURRENT_API_CALLS=15
 ```
 
-2. Run the ingestion command on a single file or an entire directory:
+### 2. Running the Tool
+
+To launch the interactive wizard (which allows you to select files, folders, or paste raw text):
 ```bash
-# Process a single file
+virstack-doc-ingest
+```
+
+To bypass the wizard and directly ingest a specific file or directory:
+```bash
+# Process a single contract
 virstack-doc-ingest ./documents/contract.pdf
 
-# Process a whole folder
-virstack-doc-ingest ./documents/
+# Process all documents in a directory
+virstack-doc-ingest ./company-knowledge-base/
 
-# See detailed processing logs
+# Run with verbose, node-level diagnostics
 virstack-doc-ingest ./documents/ --verbose
 ```
 
 ### Example Output
 
 ```text
-  ____       _       ____     ___                                _   
- |  _ \     / \     / ___|   |_ _|  _ __     __ _    ___   ___  | |_ 
- | |_) |   / _ \   | |  _     | |  | '_ \   / _` |  / _ \ / __| | __|
- |  _ <   / ___ \  | |_| |    | |  | | | | | (_| | |  __/ \__ \ | |_ 
- |_| \_\ /_/   \_\  \____|   |___| |_| |_|  \__, |  \___| |___/  \__|
-                                            |___/                    
+ __     __  _                _                    _        ____                     ___                                _   
+ \ \   / / (_)  _ __   ___  | |_    __ _    ___  | | __   |  _ \    ___     ___    |_ _|  _ __     __ _    ___   ___  | |_ 
+  \ \ / /  | | | '__| / __| | __|  / _` |  / __| | |/ /   | | | |  / _ \   / __|    | |  | '_ \   / _` |  / _ \ / __| | __|
+   \ V /   | | | |    \__ \ | |_  | (_| | | (__  |   <    | |_| | | (_) | | (__     | |  | | | | | (_| | |  __/ \__ \ | |_ 
+    \_/    |_| |_|    |___/  \__|  \__,_|  \___| |_|\_\   |____/   \___/   \___|   |___| |_| |_|  \__, |  \___| |___/  \__|
+                                                                                                  |___/                    
 ┌   Welcome to Virstack Doc Ingest 
 │
 ◇  What file or directory would you like to process?
@@ -93,14 +109,21 @@ virstack-doc-ingest ./documents/ --verbose
 └   Pipeline Finished Successfully!
 ```
 
-
 ---
 
-## 🛠️ Usage: Library Mode (100% Provider Agnostic)
+## 🛠️ Usage Mode 2: Node.js Library (100% Provider Agnostic)
 
-You can seamlessly integrate this pipeline into your existing Node.js backends or SaaS applications. **The pipeline is 100% Provider Agnostic.** Instead of hardcoding specific AI models or databases, you can dynamically inject adapters for Pinecone, Qdrant, Ollama, OpenAI, Vertex AI, pgvector, or any other service.
+Virstack Doc Ingest is designed to be fully embedded into your own SaaS backends or ETL pipelines. It is rigidly decoupled from concrete implementations.
 
-### Example: Injecting Local LLMs and Custom DBs
+### Default Built-In Adapters
+The package exports fully functional adapters for typical stacks:
+- `OpenRouterLlmAdapter`
+- `OpenRouterEmbeddingAdapter`
+- `UpstashAdapter`
+
+### Custom Adapter Example (Pinecone & Local LLM)
+
+Here is how you inject your own custom logic into the LangGraph pipeline:
 
 ```typescript
 import { 
@@ -113,56 +136,61 @@ import {
 } from "virstack-doc-ingest";
 import { Pinecone } from '@pinecone-database/pinecone';
 
-// 1. Create a custom Vector DB adapter
-class MyPineconeAdapter implements VectorStoreAdapter { /* ... */ }
+// 1. Define your own Vector Store connection
+class CustomPineconeAdapter implements VectorStoreAdapter { 
+  async upsert(records: any[]) { /* ... */ } 
+}
 
-// 2. Create a custom local LLM adapter
-class LocalOllamaAdapter implements LlmAdapter { /* ... */ }
+// 2. Define a custom Local AI processor (e.g. Ollama)
+class LocalLLMAdapter implements LlmAdapter { 
+  async extractText(image: Buffer, mime: string) { return "extracted text"; } 
+}
 
-// 3. Initialize the pipeline and inject your custom adapters
+// 3. Mount the adapters to the global configuration
 initializeConfig({
-  llm: new LocalOllamaAdapter(),
+  llm: new LocalLLMAdapter(),
   embedder: new OpenRouterEmbeddingAdapter(process.env.OPENROUTER_API_KEY!, "text-embedding-3-large"),
-  vectorStore: new MyPineconeAdapter(), // Boom! Agnostic injection.
-  maxConcurrentFiles: 3
+  vectorStore: new CustomPineconeAdapter(),
+  maxConcurrentFiles: 5
 });
 
-async function processDocuments() {
+// 4. Invoke the ingestion orchestrator
+async function processData() {
   const files = [
     "./uploads/report_2024.pdf",
     "./uploads/financials.xlsx"
   ];
 
-  console.log("Starting ingestion pipeline...");
+  console.log("Orchestrating batch ingestion...");
   const result = await batchGraph.invoke({ files });
-  console.dir(result.results, { depth: null });
+  console.log("Success! Extracted documents:", result.results.length);
 }
 
-processDocuments();
+processData();
 ```
 
-*(Note: If you are building a quick script, you can import the built-in `OpenRouterLlmAdapter`, `OpenRouterEmbeddingAdapter`, and `UpstashAdapter` from the package).*
+---
 
-## ⚙️ Configuration Options
+## ⚙️ Configuration Reference
 
-When calling `initializeConfig(options)`, you can pass the following parameters:
+When invoking `initializeConfig(options)`, the `VirstackDocIngestConfig` interface accepts the following properties:
 
-| Parameter | Type | Default | Description |
+| Property | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `llm` | `LlmAdapter` | **Required** | The adapter to handle Markdown extraction from text/PDF chunks. |
-| `embedder` | `EmbeddingAdapter` | **Required** | The adapter to handle chunk vectorization. |
-| `vectorStore` | `VectorStoreAdapter` | **Required** | The database adapter to receive the chunks & vectors. |
-| `openRouterApiKey` | `string` | optional | Optional fallback for CLI backwards compatibility. |
-| `maxConcurrentFiles`| `number` | `3` | Max files processed in parallel. |
-| `maxConcurrentApi`  | `number` | `15` | Global rate limit for LLM/Embedding calls. |
-| `maxTokens`         | `number` | `16384` | Max tokens per extraction call. |
-| `embeddingDimensions`| `number` | `1536` | Output dimensions of the embedding model. |
-| `chunkSize`         | `number` | `1000` | Max characters per text chunk. |
-| `chunkOverlap`      | `number` | `100` | Overlap between text chunks. |
-| `pdfPagesPerChunk`  | `number` | `10` | PDF pages per parallel Vision call. |
-| `systemPrompt`      | `string` | default | Custom system prompt for extraction. |
+| `llm` | `LlmAdapter` | **Required** | Provider for extracting text (especially from PDF images via Vision APIs). |
+| `embedder` | `EmbeddingAdapter` | **Required** | Provider for transforming text chunks into vector arrays. |
+| `vectorStore` | `VectorStoreAdapter` | **Required** | Provider targeting your target vector database for final persistence. |
+| `openRouterApiKey` | `string` | `undefined` | Required if utilizing the built-in OpenRouter adapters. |
+| `maxConcurrentFiles`| `number` | `3` | Maximum files mapped into the parallel processing queue simultaneously. |
+| `maxConcurrentApi`  | `number` | `15` | Global connection limit to prevent 429 Rate Limit errors across all active nodes. |
+| `maxTokens`         | `number` | `16384` | Maximum allowable context window for the Vision LLM extraction. |
+| `embeddingDimensions`| `number` | `1536` | Target dimensions for the output vectors. |
+| `chunkSize`         | `number` | `1000` | Target character length for Markdown recursive section chunking. |
+| `chunkOverlap`      | `number` | `100` | Overlapping character padding between contiguous chunk segments. |
+| `pdfPagesPerChunk`  | `number` | `10` | Number of PDF pages grouped together before a parallel Vision evaluation. |
+| `systemPrompt`      | `string` | *(default)* | Injection of custom instructions overriding the default extraction constraints. |
 
 ---
 
 ## 📄 License
-MIT
+Released under the **MIT** License.
