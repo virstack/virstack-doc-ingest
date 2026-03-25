@@ -3,6 +3,7 @@ dist/
 .env
 *.tsbuildinfo
 /docs
+/docs/*
 /outputs
 
 # LangGraph API
