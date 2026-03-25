@@ -8,7 +8,16 @@ import { logger, LogSource } from "../core/logger.js";
  */
 export const BatchStateAnnotation = Annotation.Root({
   /** Input: List of absolute file paths to process */
-  files: Annotation<string[]>,
+  files: Annotation<string[]>({
+    reducer: (x, y) => x.concat(y),
+    default: () => [],
+  }),
+
+  /** Input: List of raw text snippets to process */
+  rawTexts: Annotation<Array<{ content: string; name: string }>>({
+    reducer: (x, y) => x.concat(y),
+    default: () => [],
+  }),
   
   /** Output: Collection of results from each individual document run */
   results: Annotation<any[]>({
@@ -31,21 +40,30 @@ function orchestrator(state: BatchState) {
  * Conditional edge: Uses the Send API to spawn parallel worker nodes for each file.
  */
 function distributeFiles(state: BatchState) {
-  return state.files.map((file) => 
+  const fileSends = state.files.map((file) => 
     new Send("workerNode", { filePath: file })
   );
+
+  const textSends = state.rawTexts.map((txt) => 
+    new Send("workerNode", { rawText: txt.content, name: txt.name })
+  );
+
+  return [...fileSends, ...textSends];
 }
 
 /**
  * Worker node: Invokes the original single-document pipeline.
  */
-async function workerNode(state: { filePath: string }) {
-  const fileName = path.basename(state.filePath);
+async function workerNode(state: { filePath?: string; rawText?: string; name?: string }) {
+  const fileName = state.name || (state.filePath ? path.basename(state.filePath) : "raw-text");
   const startTime = Date.now();
 
   try {
     // Invoke the existing compiled single-document graph
-    const result = await singleDocGraph.invoke({ filePath: state.filePath });
+    const result = await singleDocGraph.invoke({ 
+      filePath: state.filePath,
+      rawText: state.rawText 
+    });
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
 
     return {

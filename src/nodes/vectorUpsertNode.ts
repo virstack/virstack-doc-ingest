@@ -7,7 +7,7 @@ import type { VectorRecord } from "../adapters/vectorStore.js";
 
 /**
  * Upserts text chunks + their embedding vectors into a generic Vector Store Adapter.
- * Each chunk is stored with rich metadata for RAG filtering.
+ * Each chunk is stored with rich metadata for vector filtering.
  */
 export async function vectorUpsertNode(
   state: PipelineState,

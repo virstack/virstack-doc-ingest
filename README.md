@@ -1,6 +1,6 @@
-# 🚀 RAG Ingestion Pipeline
+# 🚀 Omni Ingest
 
-A high-performance, parallelized document ingestion and vectorization pipeline for Retrieval-Augmented Generation (RAG). Built with **LangGraph**, powered by **Gemini / OpenRouter**, and indexed in **Upstash Vector**.
+A high-performance, parallelized document ingestion and vectorization pipeline for Retrieval-Augmented Generation. Built with **LangGraph**, powered by **Gemini / OpenRouter**, and indexed in **Upstash Vector**.
 
 This package handles complex file routing, parallel chunking, LibreOffice conversion, markdown normalization, and embeddings—all in one seamless flow.
 
@@ -28,12 +28,12 @@ This package handles complex file routing, parallel chunking, LibreOffice conver
 
 Install globally to use as a CLI tool:
 ```bash
-npm install -g rag-ingestion-pipeline
+npm install -g omni-ingest
 ```
 
 Or install locally to use in your Node.js project:
 ```bash
-npm install rag-ingestion-pipeline
+npm install omni-ingest
 ```
 
 ---
@@ -56,13 +56,13 @@ MAX_CONCURRENT_API_CALLS=15
 2. Run the ingestion command on a single file or an entire directory:
 ```bash
 # Process a single file
-rag-ingest ./documents/contract.pdf
+omni-ingest ./documents/contract.pdf
 
 # Process a whole folder
-rag-ingest ./documents/
+omni-ingest ./documents/
 
 # See detailed processing logs
-rag-ingest ./documents/ --verbose
+omni-ingest ./documents/ --verbose
 ```
 
 ### Example Output
@@ -74,7 +74,7 @@ rag-ingest ./documents/ --verbose
  |  _ <   / ___ \  | |_| |    | |  | | | | | (_| | |  __/ \__ \ | |_ 
  |_| \_\ /_/   \_\  \____|   |___| |_| |_|  \__, |  \___| |___/  \__|
                                             |___/                    
-┌   Welcome to the RAG Ingestion Pipeline 
+┌   Welcome to Omni Ingest 
 │
 ◇  What file or directory would you like to process?
 │  ./docs                      
@@ -110,7 +110,7 @@ import {
   type LlmAdapter, 
   type EmbeddingAdapter,
   OpenRouterEmbeddingAdapter
-} from "rag-ingestion-pipeline";
+} from "omni-ingest";
 import { Pinecone } from '@pinecone-database/pinecone';
 
 // 1. Create a custom Vector DB adapter
