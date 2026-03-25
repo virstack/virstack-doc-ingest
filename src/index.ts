@@ -1,5 +1,5 @@
 // Export the config API
-export { initializeConfig, type OmniIngestConfig } from "./core/config.js";
+export { initializeConfig, type VirstackDocIngestConfig } from "./core/config.js";
 
 // Export the processing graphs
 export { graph as batchGraph, BatchStateAnnotation } from "./graphs/batchProcessor.js";

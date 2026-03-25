@@ -1,12 +1,12 @@
 {
-  "name": "omni-ingest",
+  "name": "virstack-doc-ingest",
   "version": "1.0.0",
   "description": "A high-performance, parallelized document ingestion and vectorization pipeline.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "type": "module",
   "bin": {
-    "omni-ingest": "./dist/cli.js"
+    "virstack-doc-ingest": "./dist/cli.js"
   },
   "files": [
     "dist"
@@ -18,7 +18,7 @@
     "dev": "tsx src/cli.ts"
   },
   "keywords": [
-    "omni",
+    "virstack",
     "llm",
     "langgraph",
     "gemini",

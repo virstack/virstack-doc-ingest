@@ -73,10 +73,10 @@ const SUPPORTED_EXTENSIONS = new Set([
 async function main() {
   console.clear();
   console.log(
-    color.cyan(figlet.textSync("Omni Ingest", { horizontalLayout: "full" })),
+    color.cyan(figlet.textSync("Virstack Doc Ingest", { horizontalLayout: "full" })),
   );
 
-  intro(color.bgCyan(color.black(" Welcome to Omni Ingest ")));
+  intro(color.bgCyan(color.black(" Welcome to Virstack Doc Ingest ")));
 
   // Improved argument parsing: Get the first non-flag argument as the path
   let targetPath = process.argv.slice(2).find((arg) => !arg.startsWith("-"));

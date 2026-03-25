@@ -3,7 +3,7 @@ import { UpstashAdapter, type VectorStoreAdapter } from "../adapters/vectorStore
 import { type LlmAdapter, type EmbeddingAdapter, OpenRouterLlmAdapter, OpenRouterEmbeddingAdapter } from "../adapters/aiAdapters.js";
 
 // 1. Define what the user can configure
-export interface OmniIngestConfig {
+export interface VirstackDocIngestConfig {
   openRouterApiKey?: string; // Kept for CLI backwards compatibility convenience, but technically optional now if using custom adapters
   vectorStore: VectorStoreAdapter;
   llm: LlmAdapter;
@@ -19,13 +19,13 @@ export interface OmniIngestConfig {
 }
 
 // 2. Hold the global settings
-export let pipelineConfig: Required<OmniIngestConfig> = undefined as any;
+export let pipelineConfig: Required<VirstackDocIngestConfig> = undefined as any;
 
 // Global API rate limiter initialized lazily
 export let apiLimit: ReturnType<typeof pLimit>;
 
 // 3. Create the initialization function
-export function initializeConfig(config: OmniIngestConfig) {
+export function initializeConfig(config: VirstackDocIngestConfig) {
   // 1. Validate required parameters
   const missing: string[] = [];
   if (!config.vectorStore) missing.push("vectorStore");
@@ -34,7 +34,7 @@ export function initializeConfig(config: OmniIngestConfig) {
 
   if (missing.length > 0) {
     throw new Error(
-      `Omni Ingest initialization failed. Missing required adapters: ${missing.join(", ")}`,
+      `Virstack Doc Ingest initialization failed. Missing required adapters: ${missing.join(", ")}`,
     );
   }
 
@@ -52,7 +52,7 @@ export function initializeConfig(config: OmniIngestConfig) {
     maxConcurrentApi: config.maxConcurrentApi || 15,
     systemPrompt: config.systemPrompt,
     maxTokens: config.maxTokens || 16384,
-  } as Required<OmniIngestConfig>;
+  } as Required<VirstackDocIngestConfig>;
 
   // Global rate limiter initialized lazily
   apiLimit = pLimit(pipelineConfig.maxConcurrentApi);
@@ -62,15 +62,15 @@ export function initializeConfig(config: OmniIngestConfig) {
 export function requireInit() {
   if (!pipelineConfig) {
     throw new Error(
-      "Omni Ingest not initialized. Call initializeConfig() first.",
+      "Virstack Doc Ingest not initialized. Call initializeConfig() first.",
     );
   }
 }
 
 /**
- * Helper for CLI/Tools to get an OmniIngestConfig object from process.env
+ * Helper for CLI/Tools to get a VirstackDocIngestConfig object from process.env
  */
-export function getEnvConfig(): OmniIngestConfig {
+export function getEnvConfig(): VirstackDocIngestConfig {
   const apiKey = process.env.OPENROUTER_API_KEY as string;
   const llmModel = process.env.LLM_MODEL as string;
   const embedModel = process.env.EMBEDDING_MODEL as string;

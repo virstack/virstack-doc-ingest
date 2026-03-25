@@ -14,7 +14,7 @@ import { saveMarkdown } from "../nodes/saveMarkdown.js";
 import { libreOfficeToPdf } from "../nodes/libreOfficeToPdf.js";
 
 /**
- * Builds and compiles the Omni Ingest pipeline as a LangGraph StateGraph.
+ * Builds and compiles the Virstack Doc Ingest pipeline as a LangGraph StateGraph.
  *
  * Flow:
  *   START → fileTypeRouter
