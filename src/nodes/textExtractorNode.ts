@@ -29,16 +29,19 @@ export async function textExtractorNode(
     });
 
     // Convert to a simple text representation
-    rawText = records
-      .map((row) => row.join(" | "))
-      .join("\n");
+    rawText = records.map((row) => row.join(" | ")).join("\n");
   } else {
     // DOCX, PPTX, XLSX — use officeparser
-    if (!filePath) throw new Error("filePath required for office document parsing");
-    rawText = await officeparser.parseOfficeAsync(filePath) as string;
+    if (!filePath)
+      throw new Error("filePath required for office document parsing");
+    const ast = await officeparser.parseOffice(filePath);
+    rawText = ast.toText();
   }
 
-  logger.info(LogSource.TEXT_EXTRACTOR, `Extracted ${rawText.length} chars of raw text`);
+  logger.info(
+    LogSource.TEXT_EXTRACTOR,
+    `Extracted ${rawText.length} chars of raw text`,
+  );
 
   return { rawText };
 }
