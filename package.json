@@ -1,6 +1,6 @@
 {
   "name": "@virstack/doc-ingest",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A high-performance, parallelized document ingestion and vectorization pipeline.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -39,11 +39,11 @@
     "dotenv": "^16.4.0",
     "figlet": "^1.11.0",
     "mime-types": "^2.1.35",
-    "officeparser": "^4.1.0",
+    "officeparser": "^6.0.7",
     "p-limit": "^7.3.0",
     "pdf-lib": "^1.17.1",
     "picocolors": "^1.1.1",
-    "terminal-image": "^4.2.0"
+    "terminal-image": "^3.0.0"
   },
   "devDependencies": {
     "@langchain/langgraph-cli": "^1.1.16",
