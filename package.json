@@ -1,7 +1,11 @@
 {
   "name": "@virstack/doc-ingest",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A high-performance, parallelized document ingestion and vectorization pipeline.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/virstack/virstack-doc-ingest"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "type": "module",
