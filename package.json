@@ -1,5 +1,5 @@
 {
-  "name": "@virstack/virstack-doc-ingest",
+  "name": "@virstack/doc-ingest",
   "version": "1.0.0",
   "description": "A high-performance, parallelized document ingestion and vectorization pipeline.",
   "main": "./dist/index.js",
