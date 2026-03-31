@@ -73,7 +73,9 @@ const SUPPORTED_EXTENSIONS = new Set([
 async function main() {
   console.clear();
   console.log(
-    color.cyan(figlet.textSync("Virstack Doc Ingest", { horizontalLayout: "full" })),
+    color.cyan(
+      figlet.textSync("Virstack Doc Ingest", { horizontalLayout: "full" }),
+    ),
   );
 
   intro(color.bgCyan(color.black(" Welcome to Virstack Doc Ingest ")));
@@ -239,7 +241,16 @@ async function main() {
     );
 
     for (const r of results) {
-      const fileName = r.file.padEnd(35).slice(0, 35);
+      // Use Intl.Segmenter to safely count and truncate visible characters (graphemes)
+      // This prevents multi-byte or combining characters (like Sinhala) from breaking table alignment.
+      const segmenter = new Intl.Segmenter("en", { granularity: "grapheme" });
+      const graphemes = [...segmenter.segment(path.basename(r.file))].map(
+        (g) => g.segment,
+      );
+      const truncatedName = graphemes.slice(0, 35).join("");
+      const padding = Math.max(0, 35 - graphemes.slice(0, 35).length);
+      const fileName = truncatedName + " ".repeat(padding);
+
       if (r.status === "success") {
         log.message(
           `  ${color.green("✔")} ${color.cyan(fileName)} │ ${r.chunks.toString().padStart(4)} chunks │ ${r.vectors.toString().padStart(4)} vectors │ ${r.durationSec}s`,
