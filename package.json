@@ -1,5 +1,5 @@
 {
-  "name": "virstack-doc-ingest",
+  "name": "@virstack/virstack-doc-ingest",
   "version": "1.0.0",
   "description": "A high-performance, parallelized document ingestion and vectorization pipeline.",
   "main": "./dist/index.js",
@@ -25,7 +25,7 @@
     "pdf-parsing",
     "vector-database"
   ],
-  "author": "Your Name",
+  "author": "Mayura Sandakalum",
   "license": "MIT",
   "dependencies": {
     "@clack/prompts": "^1.1.0",
