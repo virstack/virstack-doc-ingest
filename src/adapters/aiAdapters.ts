@@ -5,7 +5,10 @@ import { OpenRouter } from "@openrouter/sdk";
 export interface LlmInput {
   systemPrompt: string;
   userText: string;
-  base64PdfChunk?: string; // Optional: Used when processing PDF Vision chunks
+  /** @deprecated use base64Data instead */
+  base64PdfChunk?: string; 
+  base64Data?: string;
+  mimeType?: string;
 }
 
 export interface LlmAdapter {
@@ -30,10 +33,13 @@ export class OpenRouterLlmAdapter implements LlmAdapter {
   async generateMarkdown(input: LlmInput): Promise<string> {
     const userContent: any[] = [];
     
-    if (input.base64PdfChunk) {
+    const mediaObj = input.base64Data || input.base64PdfChunk;
+    
+    if (mediaObj) {
+      const mime = input.mimeType || "application/pdf";
       userContent.push({
         type: "image_url",
-        imageUrl: { url: `data:application/pdf;base64,${input.base64PdfChunk}` },
+        imageUrl: { url: `data:${mime};base64,${mediaObj}` },
       });
     }
     userContent.push({ type: "text", text: input.userText });

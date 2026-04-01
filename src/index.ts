@@ -14,6 +14,9 @@ export {
   graph as singleDocGraph,
 } from "./graphs/singleDocument.js";
 
+// Export the core constants
+export { SUPPORTED_FILE_EXTENSIONS } from "./core/constants.js";
+
 // Export the state types for TypeScript consumers
 export type { PipelineState } from "./core/state.js";
 export type { BatchState } from "./graphs/batchProcessor.js";

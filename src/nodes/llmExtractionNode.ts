@@ -29,7 +29,7 @@ Output the final Markdown only. Do not include conversational filler before or a
  * 2. Raw text extracted by textExtractorNode (Text branch)
  */
 export async function llmExtractionNode(
-  state: Partial<PipelineState> & { chunk?: string; index?: number; totalChunks?: number }
+  state: Partial<PipelineState> & { chunk?: string; index?: number; totalChunks?: number; mimeType?: string }
 ): Promise<Partial<PipelineState>> {
 
   requireInit();
@@ -46,13 +46,14 @@ export async function llmExtractionNode(
   const promptInput: LlmInput = {
     systemPrompt: finalSystemPrompt,
     userText: isChunkFlow 
-      ? `Extract all content from this PDF (chunk ${state.index! + 1} of ${state.totalChunks}) into clean Markdown.`
+      ? `Extract all content from this document/image (chunk ${state.index! + 1} of ${state.totalChunks}) into clean Markdown.`
       : `Convert the following extracted document text into clean Markdown:\n\n${state.rawText}`,
-    base64PdfChunk: isChunkFlow ? state.chunk : undefined
+    base64Data: isChunkFlow ? state.chunk : undefined,
+    mimeType: state.mimeType
   };
 
   if (isChunkFlow) {
-    logger.info(LogSource.LLM_EXTRACTION, `Processing PDF chunk ${state.index! + 1}/${state.totalChunks} (${((state.chunk!.length * 0.75) / 1024).toFixed(0)} KB)`);
+    logger.info(LogSource.LLM_EXTRACTION, `Processing chunk ${state.index! + 1}/${state.totalChunks} (${((state.chunk!.length * 0.75) / 1024).toFixed(0)} KB)`);
   } else {
     logger.info(LogSource.LLM_EXTRACTION, `Sending ${state.rawText!.length} chars to generic LLM Adapter`);
   }

@@ -12,6 +12,7 @@ import { vectorEmbedderNode } from "../nodes/vectorEmbedderNode.js";
 import { vectorUpsertNode } from "../nodes/vectorUpsertNode.js";
 import { saveMarkdown } from "../nodes/saveMarkdown.js";
 import { libreOfficeToPdf } from "../nodes/libreOfficeToPdf.js";
+import { imageReaderNode } from "../nodes/imageReaderNode.js";
 
 /**
  * Builds and compiles the Virstack Doc Ingest pipeline as a LangGraph StateGraph.
@@ -37,6 +38,7 @@ function dispatchPdfChunks(state: PipelineState) {
       chunk,
       index,
       totalChunks: state.pdfChunks.length,
+      mimeType: state.mimeType,
     });
   });
 }
@@ -53,6 +55,9 @@ export function buildPipeline() {
     // ── Phase 2b: Text / Data Extraction Branch ──
     .addNode("textExtractorNode", textExtractorNode)
     .addNode("llmExtractionNode", llmExtractionNode)
+
+    // ── Phase 2c: Image Branch ──
+    .addNode("imageReaderNode", imageReaderNode)
 
     // ── Phase 3: Normalization & Chunking ──
     .addNode("markdownNormalizer", markdownNormalizer)
@@ -72,13 +77,15 @@ export function buildPipeline() {
       pdf: "pdfSplitter",
       convert: "libreOfficeToPdf",
       extract: "textExtractorNode",
+      image: "imageReaderNode",
     })
 
     // Convert branch: LibreOffice → pdfSplitter → (joins PDF branch)
     .addEdge("libreOfficeToPdf", "pdfSplitter")
 
-    // PDF branch dispatcher
+    // PDF/Image unified dispatcher
     .addConditionalEdges("pdfSplitter", dispatchPdfChunks, ["llmExtractionNode"])
+    .addConditionalEdges("imageReaderNode", dispatchPdfChunks, ["llmExtractionNode"])
 
     // Unified Document/Text branch flow
     .addEdge("textExtractorNode", "llmExtractionNode")

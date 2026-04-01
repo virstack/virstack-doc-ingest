@@ -8,7 +8,7 @@ Powered by **LangGraph** for resilient orchestration, **OpenRouter / Gemini** fo
 
 ## ✨ Key Features
 
-- **Universal Multi-Format Support:** Natively processes PDF, DOCX, XLSX, PPTX, CSV, TXT, HTML, and EPUB files.
+- **Universal Multi-Format Support:** Natively processes PDF, DOCX, XLSX, PPTX, CSV, TXT, HTML, EPUB, and Images (JPG, JPEG, PNG, GIF, WEBP, SVG).
 - **Dual-Tier Parallelism:** Concurrently processes multiple files while simultaneously splitting and routing large PDFs into parallel Vision-API execution nodes.
 - **Smart Type Routing:** Automatically identifies MIME types and dynamically routes files to the most optimal, parser-specific extraction graph.
 - **Provider Agnostic Architecture:** Built entirely on Dependency Injection. Easily swap out LLMs, Embeddings, and Vector Databases (Pinecone, Qdrant, etc.) to fit your specific stack.
@@ -120,6 +120,21 @@ virstack-doc-ingest ./documents/ --verbose
 ## 🛠️ Usage Mode 2: Node.js Library (100% Provider Agnostic)
 
 Virstack Doc Ingest is designed to be fully embedded into your own SaaS backends or ETL pipelines. It is rigidly decoupled from concrete implementations.
+
+### Validating Supported File Types
+
+You can import the list of natively supported file extensions directly from the library to validate user uploads before sending them to the ingestion pipeline.
+
+```typescript
+import { SUPPORTED_FILE_EXTENSIONS, batchGraph } from "virstack-doc-ingest";
+
+const fileExt = ".jpg"; // e.g. path.extname(file)
+
+if (!SUPPORTED_FILE_EXTENSIONS.includes(fileExt.toLowerCase())) {
+  console.error(`Unsupported file type: ${fileExt}`);
+  // Return a 400 Bad Request to the user
+}
+```
 
 ### Default Built-In Adapters
 

@@ -82,6 +82,19 @@ export function routeByMimeType(state: PipelineState): string {
     return "extract";
   }
 
+  // Images
+  const imageTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+    "image/svg+xml"
+  ];
+
+  if (mime && imageTypes.includes(mime)) {
+    return "image";
+  }
+
   // Fallback: try to treat as text
   logger.warn(LogSource.FILE_ROUTER, `Unknown MIME "${mime}", falling back to extract branch`);
   return "extract";
