@@ -1,6 +1,6 @@
 {
   "name": "@virstack/doc-ingest",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A high-performance, parallelized document ingestion and vectorization pipeline.",
   "repository": {
     "type": "git",
@@ -13,10 +13,11 @@
     "virstack-doc-ingest": "./dist/cli.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "rm -rf dist && tsc",
     "prepublishOnly": "npm run build",
     "start": "node dist/cli.js",
     "dev": "tsx src/cli.ts"
