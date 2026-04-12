@@ -66,6 +66,9 @@ MAX_CONCURRENT_FILES=3
 MAX_CONCURRENT_API_CALLS=15
 ```
 
+> **Note on LangGraph Studio:** If you plan to visualize and run this pipeline directly within **LangGraph Studio**, you must also include your `LANGSMITH_API_KEY` (or `LANGCHAIN_API_KEY`) in your `.env` file to enable pipeline auto-initialization.
+
+
 ### 2. Running the Tool
 
 To launch the interactive wizard (which allows you to select files, folders, or paste raw text):

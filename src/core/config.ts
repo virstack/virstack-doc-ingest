@@ -122,7 +122,11 @@ export function getEnvConfig(): VirstackDocIngestConfig {
 }
 
 // Auto-initialize for LangGraph Studio if running directly via the CLI/Studio
-if (typeof pipelineConfig === "undefined" && process.env.OPENROUTER_API_KEY) {
+if (
+  typeof pipelineConfig === "undefined" &&
+  process.env.OPENROUTER_API_KEY &&
+  (process.env.LANGSMITH_API_KEY || process.env.LANGCHAIN_API_KEY)
+) {
   try {
     initializeConfig(getEnvConfig());
   } catch (e) {
