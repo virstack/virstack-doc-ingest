@@ -29,7 +29,7 @@ export const PipelineStateAnnotation = Annotation.Root({
   /** Semantic text chunks after splitting */
   textChunks: Annotation<string[]>,
 
-  /** OpenAI embedding vectors, one per text chunk */
+  /** Embedding vectors, one per text chunk */
   vectors: Annotation<number[][]>,
 });
 

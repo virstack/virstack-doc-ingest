@@ -61,7 +61,7 @@ OPENROUTER_API_KEY=sk-or-v1-...
 UPSTASH_VECTOR_URL=https://...
 UPSTASH_VECTOR_TOKEN=...
 LLM_MODEL=google/gemini-2.0-flash-001
-EMBEDDING_MODEL=text-embedding-3-large
+EMBEDDING_MODEL=google/gemini-embedding-2-preview
 MAX_CONCURRENT_FILES=3
 MAX_CONCURRENT_API_CALLS=15
 ```
@@ -181,7 +181,7 @@ initializeConfig({
   llm: new LocalLLMAdapter(),
   embedder: new OpenRouterEmbeddingAdapter(
     process.env.OPENROUTER_API_KEY!,
-    "text-embedding-3-large",
+    "google/gemini-embedding-2-preview",
   ),
   vectorStore: new CustomPineconeAdapter(),
   maxConcurrentFiles: 5,
