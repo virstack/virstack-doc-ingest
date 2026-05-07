@@ -2,26 +2,24 @@
 import "dotenv/config";
 import path from "node:path";
 import fs from "node:fs/promises";
-import {
-  initializeConfig,
-  getEnvConfig,
-  pipelineConfig,
-} from "./core/config.js";
+import { initializeConfig, getEnvConfig, pipelineConfig } from "./core/config.js";
 import { batchGraph } from "./index.js";
 
 // UI Libraries
-import {
-  intro,
-  outro,
-  text,
-  spinner,
-  select,
-  isCancel,
-  cancel,
-  log,
-} from "@clack/prompts";
+import { intro, outro, text, spinner, select, isCancel, cancel, log } from "@clack/prompts";
 import color from "picocolors";
 import figlet from "figlet";
+
+// Result shape produced by workerNode in batchProcessor
+interface BatchResult {
+  file: string;
+  status: "success" | "error";
+  chunks: number;
+  vectors: number;
+  durationSec: string;
+  error?: string;
+  usage?: unknown;
+}
 
 // Import the setLogger function
 import { setLogger } from "./core/logger.js";
@@ -47,9 +45,7 @@ setLogger({
     log.warn(`${color.yellow(`[${source}]`)} ${message}`);
   },
   error: (source, message, err) => {
-    log.error(
-      `${color.red(`[${source}]`)} ${message} ${err ? String(err) : ""}`,
-    );
+    log.error(`${color.red(`[${source}]`)} ${message} ${err ? String(err) : ""}`);
   },
 });
 
@@ -72,16 +68,12 @@ const SUPPORTED_EXTENSIONS = new Set([
 
 async function main() {
   console.clear();
-  console.log(
-    color.cyan(
-      figlet.textSync("Virstack Doc Ingest", { horizontalLayout: "full" }),
-    ),
-  );
+  console.log(color.cyan(figlet.textSync("Virstack Doc Ingest", { horizontalLayout: "full" })));
 
   intro(color.bgCyan(color.black(" Welcome to Virstack Doc Ingest ")));
 
   // Improved argument parsing: Get the first non-flag argument as the path
-  let targetPath = process.argv.slice(2).find((arg) => !arg.startsWith("-"));
+  const targetPath = process.argv.slice(2).find((arg) => !arg.startsWith("-"));
   let filesToProcess: string[] = [];
   let rawTexts: Array<{ content: string; name: string }> = [];
 
@@ -147,9 +139,7 @@ async function main() {
       if (stats.isDirectory()) {
         const entries = await fs.readdir(absolutePath);
         filesToProcess = entries
-          .filter((f) =>
-            SUPPORTED_EXTENSIONS.has(path.extname(f).toLowerCase()),
-          )
+          .filter((f) => SUPPORTED_EXTENSIONS.has(path.extname(f).toLowerCase()))
           .map((f) => path.resolve(absolutePath, f));
       } else {
         filesToProcess = [absolutePath];
@@ -187,8 +177,8 @@ async function main() {
 
   try {
     initializeConfig(getEnvConfig());
-  } catch (error: any) {
-    cancel(`Initialization failed: ${error.message}`);
+  } catch (error: unknown) {
+    cancel(`Initialization failed: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   }
 
@@ -223,51 +213,47 @@ async function main() {
         files: filesToProcess,
         rawTexts: rawTexts,
       },
-      { maxConcurrency: pipelineConfig.maxConcurrentFiles },
+      { maxConcurrency: pipelineConfig.maxConcurrentFiles }
     );
 
     const totalElapsed = ((Date.now() - batchStart) / 1000).toFixed(1);
-    const results = batchResult.results;
+    const results = batchResult.results as BatchResult[];
 
     // Stop the spinner successfully
     s.stop(color.green(`✔ Processing complete in ${totalElapsed}s!`));
 
     // Print Summary using Clack formatting
-    const succeeded = results.filter((r: any) => r.status === "success");
-    const failed = results.filter((r: any) => r.status === "error");
+    const succeeded = results.filter((r) => r.status === "success");
+    const failed = results.filter((r) => r.status === "error");
 
     log.step(
-      `${color.bold("Final Results:")} ${color.green(`${succeeded.length} succeeded`)}, ${color.red(`${failed.length} failed`)}`,
+      `${color.bold("Final Results:")} ${color.green(`${succeeded.length} succeeded`)}, ${color.red(`${failed.length} failed`)}`
     );
 
     for (const r of results) {
       // Use Intl.Segmenter to safely count and truncate visible characters (graphemes)
       // This prevents multi-byte or combining characters (like Sinhala) from breaking table alignment.
       const segmenter = new Intl.Segmenter("en", { granularity: "grapheme" });
-      const graphemes = [...segmenter.segment(path.basename(r.file))].map(
-        (g) => g.segment,
-      );
+      const graphemes = [...segmenter.segment(path.basename(r.file))].map((g) => g.segment);
       const truncatedName = graphemes.slice(0, 35).join("");
       const padding = Math.max(0, 35 - graphemes.slice(0, 35).length);
       const fileName = truncatedName + " ".repeat(padding);
 
       if (r.status === "success") {
         log.message(
-          `  ${color.green("✔")} ${color.cyan(fileName)} │ ${r.chunks.toString().padStart(4)} chunks │ ${r.vectors.toString().padStart(4)} vectors │ ${r.durationSec}s`,
+          `  ${color.green("✔")} ${color.cyan(fileName)} │ ${r.chunks.toString().padStart(4)} chunks │ ${r.vectors.toString().padStart(4)} vectors │ ${r.durationSec}s`
         );
       } else {
-        log.message(
-          `  ${color.red("✖")} ${color.cyan(fileName)} │ ${color.red(r.error)}`,
-        );
+        log.message(`  ${color.red("✖")} ${color.cyan(fileName)} │ ${color.red(r.error)}`);
       }
     }
 
     outro(color.bgGreen(color.black(" Pipeline Finished Successfully! ")));
 
     if (failed.length > 0) process.exit(1);
-  } catch (err: any) {
+  } catch (err: unknown) {
     s.stop(color.red("✖ Pipeline crashed"));
-    cancel(err.message);
+    cancel(err instanceof Error ? err.message : String(err));
     process.exit(1);
   }
 }

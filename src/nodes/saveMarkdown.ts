@@ -8,10 +8,8 @@ import { logger, LogSource } from "../core/logger.js";
  * Saves the final normalized markdown to a local file.
  * Creates a folder named after the document (with a unique hash) in the 'outputs' directory.
  */
-export async function saveMarkdown(
-  state: PipelineState,
-): Promise<Partial<PipelineState>> {
-  const { filePath, markdown } = state;
+export async function saveMarkdown(state: PipelineState): Promise<Partial<PipelineState>> {
+  const { markdown } = state;
 
   // Create a unique hash for the output folder
   const fileHash = crypto

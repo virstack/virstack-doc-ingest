@@ -8,9 +8,7 @@ import { logger, LogSource } from "../core/logger.js";
  *  - Deduplicates repeated headers/footers
  *  - Trims excessive whitespace
  */
-export async function markdownNormalizer(
-  state: PipelineState,
-): Promise<Partial<PipelineState>> {
+export async function markdownNormalizer(state: PipelineState): Promise<Partial<PipelineState>> {
   let md = state.markdown;
 
   logger.info(LogSource.MARKDOWN_NORMALIZER, `Input: ${md.length} chars`);
@@ -37,10 +35,7 @@ export async function markdownNormalizer(
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const prev = deduped[deduped.length - 1];
-    if (
-      line.startsWith("#") &&
-      prev === line
-    ) {
+    if (line.startsWith("#") && prev === line) {
       continue; // skip duplicate heading
     }
     deduped.push(line);

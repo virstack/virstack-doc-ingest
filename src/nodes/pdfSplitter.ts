@@ -9,9 +9,7 @@ import { logger, LogSource } from "../core/logger.js";
  * Splits a PDF into sub-documents of PDF_PAGES_PER_CHUNK pages each.
  * Each sub-document is serialised back to a Buffer for downstream Gemini processing.
  */
-export async function pdfSplitter(
-  state: PipelineState,
-): Promise<Partial<PipelineState>> {
+export async function pdfSplitter(state: PipelineState): Promise<Partial<PipelineState>> {
   requireInit();
   if (!state.filePath) throw new Error("[pdfSplitter] filePath is missing");
   const fullPath = path.resolve(process.cwd(), state.filePath);
@@ -20,14 +18,20 @@ export async function pdfSplitter(
   let fileBuffer;
   try {
     fileBuffer = await fs.readFile(fullPath);
-  } catch (err: any) {
-    throw new Error(`Failed to read file at ${fullPath}: ${err.message}`);
+  } catch (err: unknown) {
+    throw new Error(
+      `Failed to read file at ${fullPath}: ${err instanceof Error ? err.message : String(err)}`,
+      { cause: err }
+    );
   }
   const pdfDoc = await PDFDocument.load(fileBuffer);
   const totalPages = pdfDoc.getPageCount();
 
   logger.info(LogSource.PDF_SPLITTER, `Total pages: ${totalPages}`);
-  logger.info(LogSource.PDF_SPLITTER, `Splitting into chunks of ${pipelineConfig.pdfPagesPerChunk} pages`);
+  logger.info(
+    LogSource.PDF_SPLITTER,
+    `Splitting into chunks of ${pipelineConfig.pdfPagesPerChunk} pages`
+  );
 
   const chunks: string[] = [];
 
@@ -37,7 +41,7 @@ export async function pdfSplitter(
 
     const copiedPages = await subDoc.copyPages(
       pdfDoc,
-      Array.from({ length: end - start }, (_, i) => start + i),
+      Array.from({ length: end - start }, (_, i) => start + i)
     );
 
     for (const page of copiedPages) {

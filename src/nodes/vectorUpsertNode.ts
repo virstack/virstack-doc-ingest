@@ -9,9 +9,7 @@ import type { VectorRecord } from "../adapters/vectorStore.js";
  * Upserts text chunks + their embedding vectors into a generic Vector Store Adapter.
  * Each chunk is stored with rich metadata for vector filtering.
  */
-export async function vectorUpsertNode(
-  state: PipelineState,
-): Promise<Partial<PipelineState>> {
+export async function vectorUpsertNode(state: PipelineState): Promise<Partial<PipelineState>> {
   requireInit();
   const { filePath, mimeType, textChunks, vectors } = state;
 
@@ -22,7 +20,10 @@ export async function vectorUpsertNode(
     .digest("hex")
     .slice(0, 8);
 
-  logger.info(LogSource.VECTOR_UPSERT, `Upserting ${textChunks.length} chunks via Vector Store Adapter for doc ${docId}`);
+  logger.info(
+    LogSource.VECTOR_UPSERT,
+    `Upserting ${textChunks.length} chunks via Vector Store Adapter for doc ${docId}`
+  );
 
   // Format the data into our standard contract
   const records: VectorRecord[] = textChunks.map((chunk, i) => ({
@@ -44,11 +45,14 @@ export async function vectorUpsertNode(
   const BATCH_SIZE = 100;
   for (let i = 0; i < records.length; i += BATCH_SIZE) {
     const batch = records.slice(i, i + BATCH_SIZE);
-    
+
     // Call the user's database adapter instead of Upstash directly!
     await pipelineConfig.vectorStore.upsert(batch);
 
-    logger.info(LogSource.VECTOR_UPSERT, `Upserted batch ${Math.floor(i / BATCH_SIZE) + 1} (${batch.length} vectors)`);
+    logger.info(
+      LogSource.VECTOR_UPSERT,
+      `Upserted batch ${Math.floor(i / BATCH_SIZE) + 1} (${batch.length} vectors)`
+    );
   }
 
   logger.success(LogSource.VECTOR_UPSERT, `All ${textChunks.length} chunks upserted`);

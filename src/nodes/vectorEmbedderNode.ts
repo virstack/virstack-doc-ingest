@@ -6,13 +6,14 @@ import { logger, LogSource } from "../core/logger.js";
  * Embeds all textChunks using the injected EmbeddingAdapter.
  * Processes in batches to stay within API limits.
  */
-export async function vectorEmbedderNode(
-  state: PipelineState,
-): Promise<Partial<PipelineState>> {
+export async function vectorEmbedderNode(state: PipelineState): Promise<Partial<PipelineState>> {
   requireInit();
   const { textChunks } = state;
 
-  logger.info(LogSource.VECTOR_EMBEDDER, `Embedding ${textChunks.length} chunks via injected Embedder Node`);
+  logger.info(
+    LogSource.VECTOR_EMBEDDER,
+    `Embedding ${textChunks.length} chunks via injected Embedder Node`
+  );
 
   const allVectors: number[][] = [];
   const totalUsage = { input_tokens: 0, output_tokens: 0, total_tokens: 0, cost: 0 };
@@ -21,7 +22,10 @@ export async function vectorEmbedderNode(
   for (let i = 0; i < textChunks.length; i += BATCH_SIZE) {
     const batch = textChunks.slice(i, i + BATCH_SIZE);
 
-    logger.info(LogSource.VECTOR_EMBEDDER, `Batch ${Math.floor(i / BATCH_SIZE) + 1}: ${batch.length} chunk(s)`);
+    logger.info(
+      LogSource.VECTOR_EMBEDDER,
+      `Batch ${Math.floor(i / BATCH_SIZE) + 1}: ${batch.length} chunk(s)`
+    );
 
     // Call the injected Embedding adapter!
     const { embeddings, usage } = await pipelineConfig.embedder.embed(batch);
@@ -33,7 +37,10 @@ export async function vectorEmbedderNode(
     totalUsage.cost += usage.cost;
   }
 
-  logger.info(LogSource.VECTOR_EMBEDDER, `Generated ${allVectors.length} vectors (${allVectors[0]?.length ?? 0}d)`);
+  logger.info(
+    LogSource.VECTOR_EMBEDDER,
+    `Generated ${allVectors.length} vectors (${allVectors[0]?.length ?? 0}d)`
+  );
 
   return { vectors: allVectors, usage: totalUsage };
 }

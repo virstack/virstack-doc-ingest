@@ -7,9 +7,7 @@ import { logger, LogSource } from "../core/logger.js";
  *  - Removes duplicate headings at chunk boundaries
  *  - Trims excessive whitespace between chunks
  */
-export async function markdownMerger(
-  state: PipelineState,
-): Promise<Partial<PipelineState>> {
+export async function markdownMerger(state: PipelineState): Promise<Partial<PipelineState>> {
   const { markdownParts } = state;
 
   logger.info(LogSource.MARKDOWN_MERGER, `Merging ${markdownParts.length} markdown part(s)`);
@@ -25,10 +23,7 @@ export async function markdownMerger(
       const lastPrevLine = prevLines[prevLines.length - 1]?.trim() ?? "";
       const firstLine = part.split("\n")[0]?.trim() ?? "";
 
-      if (
-        lastPrevLine === firstLine &&
-        firstLine.startsWith("#")
-      ) {
+      if (lastPrevLine === firstLine && firstLine.startsWith("#")) {
         // Duplicate heading at boundary — skip it in current chunk
         part = part.split("\n").slice(1).join("\n").trim();
       }

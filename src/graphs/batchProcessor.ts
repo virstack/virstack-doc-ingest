@@ -18,9 +18,9 @@ export const BatchStateAnnotation = Annotation.Root({
     reducer: (x, y) => x.concat(y),
     default: () => [],
   }),
-  
+
   /** Output: Collection of results from each individual document run */
-  results: Annotation<any[]>({
+  results: Annotation<unknown[]>({
     reducer: (x, y) => x.concat(y),
     default: () => [],
   }),
@@ -40,12 +40,10 @@ function orchestrator(state: BatchState) {
  * Conditional edge: Uses the Send API to spawn parallel worker nodes for each file.
  */
 function distributeFiles(state: BatchState) {
-  const fileSends = state.files.map((file) => 
-    new Send("workerNode", { filePath: file })
-  );
+  const fileSends = state.files.map((file) => new Send("workerNode", { filePath: file }));
 
-  const textSends = state.rawTexts.map((txt) => 
-    new Send("workerNode", { rawText: txt.content, name: txt.name })
+  const textSends = state.rawTexts.map(
+    (txt) => new Send("workerNode", { rawText: txt.content, name: txt.name })
   );
 
   return [...fileSends, ...textSends];
@@ -60,33 +58,37 @@ async function workerNode(state: { filePath?: string; rawText?: string; name?: s
 
   try {
     // Invoke the existing compiled single-document graph
-    const result = await singleDocGraph.invoke({ 
+    const result = await singleDocGraph.invoke({
       filePath: state.filePath,
-      rawText: state.rawText 
+      rawText: state.rawText,
     });
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
 
     return {
-      results: [{
-        file: fileName,
-        status: "success",
-        chunks: result.textChunks?.length ?? 0,
-        vectors: result.vectors?.length ?? 0,
-        durationSec: elapsed,
-        usage: result.usage,
-      }]
+      results: [
+        {
+          file: fileName,
+          status: "success",
+          chunks: result.textChunks?.length ?? 0,
+          vectors: result.vectors?.length ?? 0,
+          durationSec: elapsed,
+          usage: result.usage,
+        },
+      ],
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     return {
-      results: [{
-        file: fileName,
-        status: "error",
-        chunks: 0,
-        vectors: 0,
-        durationSec: elapsed,
-        error: error.message,
-      }]
+      results: [
+        {
+          file: fileName,
+          status: "error",
+          chunks: 0,
+          vectors: 0,
+          durationSec: elapsed,
+          error: error instanceof Error ? error.message : String(error),
+        },
+      ],
     };
   }
 }
@@ -94,7 +96,7 @@ async function workerNode(state: { filePath?: string; rawText?: string; name?: s
 /**
  * Final node: Prints a summary of the entire batch.
  */
-function summaryNode(state: BatchState) {
+function summaryNode(_state: BatchState) {
   logger.success(LogSource.BATCH, "All documents processed.");
   return {};
 }

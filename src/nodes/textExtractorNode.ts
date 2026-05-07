@@ -8,9 +8,7 @@ import { logger, LogSource } from "../core/logger.js";
  * Extracts raw text from office documents (DOCX, PPTX, XLSX) using officeparser,
  * CSV files using csv-parse, and TXT files via direct read.
  */
-export async function textExtractorNode(
-  state: PipelineState,
-): Promise<Partial<PipelineState>> {
+export async function textExtractorNode(state: PipelineState): Promise<Partial<PipelineState>> {
   const { filePath, mimeType } = state;
 
   logger.info(LogSource.TEXT_EXTRACTOR, `Parsing: ${filePath} (${mimeType})`);
@@ -32,16 +30,12 @@ export async function textExtractorNode(
     rawText = records.map((row) => row.join(" | ")).join("\n");
   } else {
     // DOCX, PPTX, XLSX — use officeparser
-    if (!filePath)
-      throw new Error("filePath required for office document parsing");
+    if (!filePath) throw new Error("filePath required for office document parsing");
     const ast = await officeparser.parseOffice(filePath);
     rawText = ast.toText();
   }
 
-  logger.info(
-    LogSource.TEXT_EXTRACTOR,
-    `Extracted ${rawText.length} chars of raw text`,
-  );
+  logger.info(LogSource.TEXT_EXTRACTOR, `Extracted ${rawText.length} chars of raw text`);
 
   return { rawText };
 }

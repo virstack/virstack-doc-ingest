@@ -22,9 +22,7 @@ function getSofficePath(): string {
  * Updates state.filePath to point to the newly generated PDF.
  * Supported: DOCX, DOC, RTF, ODT, EPUB, PPTX, PPT, ODP
  */
-export async function libreOfficeToPdf(
-  state: PipelineState,
-): Promise<Partial<PipelineState>> {
+export async function libreOfficeToPdf(state: PipelineState): Promise<Partial<PipelineState>> {
   const sofficePath = getSofficePath();
   if (!state.filePath) throw new Error("[libreOfficeToPdf] filePath is missing");
   const inputPath = path.resolve(process.cwd(), state.filePath);
@@ -38,17 +36,20 @@ export async function libreOfficeToPdf(
     await execFileAsync(sofficePath, [
       "--headless",
       "--norestore",
-      "--convert-to", "pdf",
-      "--outdir", outputDir,
+      "--convert-to",
+      "pdf",
+      "--outdir",
+      outputDir,
       inputPath,
     ]);
-  } catch (err: any) {
+  } catch (err: unknown) {
     throw new Error(
       `LibreOffice conversion failed. Is LibreOffice installed?\n` +
-      `  Tried: ${sofficePath}\n` +
-      `  On macOS: brew install --cask libreoffice\n` +
-      `  Set SOFFICE_PATH in .env to override.\n` +
-      `  Original error: ${err.message}`
+        `  Tried: ${sofficePath}\n` +
+        `  On macOS: brew install --cask libreoffice\n` +
+        `  Set SOFFICE_PATH in .env to override.\n` +
+        `  Original error: ${err instanceof Error ? err.message : String(err)}`,
+      { cause: err }
     );
   }
 
@@ -62,7 +63,7 @@ export async function libreOfficeToPdf(
   } catch {
     throw new Error(
       `LibreOffice ran but output PDF not found at: ${pdfPath}. ` +
-      `Check LibreOffice installation.`
+        `Check LibreOffice installation.`
     );
   }
 

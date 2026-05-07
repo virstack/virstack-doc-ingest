@@ -1,18 +1,9 @@
 // Export the config API
-export {
-  initializeConfig,
-  type VirstackDocIngestConfig,
-} from "./core/config.js";
+export { initializeConfig, type VirstackDocIngestConfig } from "./core/config.js";
 
 // Export the processing graphs
-export {
-  graph as batchGraph,
-  BatchStateAnnotation,
-} from "./graphs/batchProcessor.js";
-export {
-  buildPipeline,
-  graph as singleDocGraph,
-} from "./graphs/singleDocument.js";
+export { graph as batchGraph, BatchStateAnnotation } from "./graphs/batchProcessor.js";
+export { buildPipeline, graph as singleDocGraph } from "./graphs/singleDocument.js";
 
 // Export the core constants
 export { SUPPORTED_FILE_EXTENSIONS } from "./core/constants.js";

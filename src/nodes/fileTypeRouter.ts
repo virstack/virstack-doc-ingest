@@ -7,9 +7,7 @@ import { logger, LogSource } from "../core/logger.js";
  * Detects the MIME type of the input file and writes it to state.
  * The routing decision itself is handled by the conditional edge in the graph.
  */
-export async function fileTypeRouter(
-  state: PipelineState,
-): Promise<Partial<PipelineState>> {
+export async function fileTypeRouter(state: PipelineState): Promise<Partial<PipelineState>> {
   if (state.rawText && !state.filePath) {
     logger.info(LogSource.FILE_ROUTER, "Direct text input detected (no file)");
     return { mimeType: "text/plain" };
@@ -52,15 +50,15 @@ export function routeByMimeType(state: PipelineState): string {
   const libreOfficeTypes = [
     // Word processing
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // DOCX
-    "application/msword",                                                        // DOC
-    "application/rtf",                                                           // RTF
-    "text/rtf",                                                                  // RTF alternate
-    "application/vnd.oasis.opendocument.text",                                  // ODT
-    "application/epub+zip",                                                      // EPUB
+    "application/msword", // DOC
+    "application/rtf", // RTF
+    "text/rtf", // RTF alternate
+    "application/vnd.oasis.opendocument.text", // ODT
+    "application/epub+zip", // EPUB
     // Presentations
     "application/vnd.openxmlformats-officedocument.presentationml.presentation", // PPTX
-    "application/vnd.ms-powerpoint",                                             // PPT
-    "application/vnd.oasis.opendocument.presentation",                          // ODP
+    "application/vnd.ms-powerpoint", // PPT
+    "application/vnd.oasis.opendocument.presentation", // ODP
   ];
 
   if (mime && libreOfficeTypes.includes(mime)) {
@@ -70,7 +68,7 @@ export function routeByMimeType(state: PipelineState): string {
   // Spreadsheets and CSV — officeparser handles these well
   const officeTypes = [
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // XLSX
-    "application/vnd.ms-excel",                                           // XLS
+    "application/vnd.ms-excel", // XLS
     "text/csv",
   ];
 
@@ -83,13 +81,7 @@ export function routeByMimeType(state: PipelineState): string {
   }
 
   // Images
-  const imageTypes = [
-    "image/jpeg",
-    "image/png",
-    "image/gif",
-    "image/webp",
-    "image/svg+xml"
-  ];
+  const imageTypes = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"];
 
   if (mime && imageTypes.includes(mime)) {
     return "image";

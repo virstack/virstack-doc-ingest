@@ -1,6 +1,11 @@
 import pLimit from "p-limit";
 import { UpstashAdapter, type VectorStoreAdapter } from "../adapters/vectorStore.js";
-import { type LlmAdapter, type EmbeddingAdapter, OpenRouterLlmAdapter, OpenRouterEmbeddingAdapter } from "../adapters/aiAdapters.js";
+import {
+  type LlmAdapter,
+  type EmbeddingAdapter,
+  OpenRouterLlmAdapter,
+  OpenRouterEmbeddingAdapter,
+} from "../adapters/aiAdapters.js";
 
 // 1. Define what the user can configure
 export interface VirstackDocIngestConfig {
@@ -19,7 +24,8 @@ export interface VirstackDocIngestConfig {
 }
 
 // 2. Hold the global settings
-export let pipelineConfig: Required<VirstackDocIngestConfig> = undefined as any;
+export let pipelineConfig: Required<VirstackDocIngestConfig> =
+  undefined as unknown as Required<VirstackDocIngestConfig>;
 
 // Global API rate limiter initialized lazily
 export let apiLimit: ReturnType<typeof pLimit>;
@@ -34,7 +40,7 @@ export function initializeConfig(config: VirstackDocIngestConfig) {
 
   if (missing.length > 0) {
     throw new Error(
-      `Virstack Doc Ingest initialization failed. Missing required adapters: ${missing.join(", ")}`,
+      `Virstack Doc Ingest initialization failed. Missing required adapters: ${missing.join(", ")}`
     );
   }
 
@@ -61,9 +67,7 @@ export function initializeConfig(config: VirstackDocIngestConfig) {
 // Helper to ensure config is loaded before a node runs
 export function requireInit() {
   if (!pipelineConfig) {
-    throw new Error(
-      "Virstack Doc Ingest not initialized. Call initializeConfig() first.",
-    );
+    throw new Error("Virstack Doc Ingest not initialized. Call initializeConfig() first.");
   }
 }
 
@@ -89,9 +93,7 @@ export function getEnvConfig(): VirstackDocIngestConfig {
   if (!token) missing.push("UPSTASH_VECTOR_TOKEN");
 
   if (missing.length > 0) {
-    throw new Error(
-      `Missing required environment variables: ${missing.join(", ")}`,
-    );
+    throw new Error(`Missing required environment variables: ${missing.join(", ")}`);
   }
 
   const vectorStore = new UpstashAdapter(url!, token!);
@@ -102,12 +104,8 @@ export function getEnvConfig(): VirstackDocIngestConfig {
     llm: new OpenRouterLlmAdapter(apiKey, llmModel),
     embedder: new OpenRouterEmbeddingAdapter(apiKey, embedModel, dimensions),
     embeddingDimensions: dimensions,
-    chunkSize: process.env.CHUNK_SIZE
-      ? parseInt(process.env.CHUNK_SIZE, 10)
-      : undefined,
-    chunkOverlap: process.env.CHUNK_OVERLAP
-      ? parseInt(process.env.CHUNK_OVERLAP, 10)
-      : undefined,
+    chunkSize: process.env.CHUNK_SIZE ? parseInt(process.env.CHUNK_SIZE, 10) : undefined,
+    chunkOverlap: process.env.CHUNK_OVERLAP ? parseInt(process.env.CHUNK_OVERLAP, 10) : undefined,
     maxConcurrentFiles: process.env.MAX_CONCURRENT_FILES
       ? parseInt(process.env.MAX_CONCURRENT_FILES, 10)
       : undefined,
@@ -115,9 +113,7 @@ export function getEnvConfig(): VirstackDocIngestConfig {
       ? parseInt(process.env.MAX_CONCURRENT_API_CALLS, 10)
       : undefined,
     systemPrompt: process.env.SYSTEM_PROMPT,
-    maxTokens: process.env.MAX_TOKENS
-      ? parseInt(process.env.MAX_TOKENS, 10)
-      : undefined,
+    maxTokens: process.env.MAX_TOKENS ? parseInt(process.env.MAX_TOKENS, 10) : undefined,
   };
 }
 
@@ -129,7 +125,7 @@ if (
 ) {
   try {
     initializeConfig(getEnvConfig());
-  } catch (e) {
+  } catch {
     console.warn("Auto-initialization for LangGraph Studio failed. Missing ENVs.");
   }
 }

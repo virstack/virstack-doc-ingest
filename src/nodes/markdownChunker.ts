@@ -5,12 +5,10 @@ import { logger, LogSource } from "../core/logger.js";
 
 /**
  * Splits markdown text into semantic chunks using LangChain's RecursiveCharacterTextSplitter.
- * This splitter tries to split on paragraphs, then sentences, then words to keep 
+ * This splitter tries to split on paragraphs, then sentences, then words to keep
  * related content together while respecting the chunk size.
  */
-export async function markdownChunker(
-  state: PipelineState,
-): Promise<Partial<PipelineState>> {
+export async function markdownChunker(state: PipelineState): Promise<Partial<PipelineState>> {
   requireInit();
   const { markdown } = state;
 

@@ -6,7 +6,7 @@ import { Index } from "@upstash/vector";
 export interface VectorRecord {
   id: string;
   vector: number[];
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 /**

@@ -41,8 +41,8 @@ export const PipelineStateAnnotation = Annotation.Root({
       total_tokens: (x?.total_tokens || 0) + (y?.total_tokens || 0),
       cost: (x?.cost || 0) + (y?.cost || 0),
     }),
-    default: () => ({ input_tokens: 0, output_tokens: 0, total_tokens: 0, cost: 0 })
-  })
+    default: () => ({ input_tokens: 0, output_tokens: 0, total_tokens: 0, cost: 0 }),
+  }),
 });
 
 export type PipelineState = typeof PipelineStateAnnotation.State;

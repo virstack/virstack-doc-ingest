@@ -29,12 +29,17 @@ Output the final Markdown only. Do not include conversational filler before or a
  * 2. Raw text extracted by textExtractorNode (Text branch)
  */
 export async function llmExtractionNode(
-  state: Partial<PipelineState> & { chunk?: string; index?: number; totalChunks?: number; mimeType?: string }
+  state: Partial<PipelineState> & {
+    chunk?: string;
+    index?: number;
+    totalChunks?: number;
+    mimeType?: string;
+  }
 ): Promise<Partial<PipelineState>> {
-
   requireInit();
 
-  const isChunkFlow = state.chunk !== undefined && state.index !== undefined && state.totalChunks !== undefined;
+  const isChunkFlow =
+    state.chunk !== undefined && state.index !== undefined && state.totalChunks !== undefined;
   const isTextFlow = !!state.rawText;
 
   if (!isChunkFlow && !isTextFlow) {
@@ -45,26 +50,35 @@ export async function llmExtractionNode(
 
   const promptInput: LlmInput = {
     systemPrompt: finalSystemPrompt,
-    userText: isChunkFlow 
+    userText: isChunkFlow
       ? `Extract all content from this document/image (chunk ${state.index! + 1} of ${state.totalChunks}) into clean Markdown.`
       : `Convert the following extracted document text into clean Markdown:\n\n${state.rawText}`,
     base64Data: isChunkFlow ? state.chunk : undefined,
-    mimeType: state.mimeType
+    mimeType: state.mimeType,
   };
 
   if (isChunkFlow) {
-    logger.info(LogSource.LLM_EXTRACTION, `Processing chunk ${state.index! + 1}/${state.totalChunks} (${((state.chunk!.length * 0.75) / 1024).toFixed(0)} KB)`);
+    logger.info(
+      LogSource.LLM_EXTRACTION,
+      `Processing chunk ${state.index! + 1}/${state.totalChunks} (${((state.chunk!.length * 0.75) / 1024).toFixed(0)} KB)`
+    );
   } else {
-    logger.info(LogSource.LLM_EXTRACTION, `Sending ${state.rawText!.length} chars to generic LLM Adapter`);
+    logger.info(
+      LogSource.LLM_EXTRACTION,
+      `Sending ${state.rawText!.length} chars to generic LLM Adapter`
+    );
   }
 
   // Call the injected LLM adapter wrapped in your rate limiter!
-  const { markdown, usage } = await apiLimit(() => 
+  const { markdown, usage } = await apiLimit(() =>
     pipelineConfig.llm.generateMarkdown(promptInput)
   );
 
   if (isChunkFlow) {
-    logger.info(LogSource.LLM_EXTRACTION, `Chunk ${state.index! + 1}/${state.totalChunks} extracted (${markdown.length} chars)`);
+    logger.info(
+      LogSource.LLM_EXTRACTION,
+      `Chunk ${state.index! + 1}/${state.totalChunks} extracted (${markdown.length} chars)`
+    );
     return { markdownParts: [markdown], usage };
   }
 
