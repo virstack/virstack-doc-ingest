@@ -73,6 +73,7 @@ async function workerNode(state: { filePath?: string; rawText?: string; name?: s
         chunks: result.textChunks?.length ?? 0,
         vectors: result.vectors?.length ?? 0,
         durationSec: elapsed,
+        usage: result.usage,
       }]
     };
   } catch (error: any) {

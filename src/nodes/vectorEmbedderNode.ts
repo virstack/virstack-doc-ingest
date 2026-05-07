@@ -15,6 +15,7 @@ export async function vectorEmbedderNode(
   logger.info(LogSource.VECTOR_EMBEDDER, `Embedding ${textChunks.length} chunks via injected Embedder Node`);
 
   const allVectors: number[][] = [];
+  const totalUsage = { input_tokens: 0, output_tokens: 0, total_tokens: 0, cost: 0 };
   const BATCH_SIZE = 50; // Common safe default, though adapters might handle their own batching internally
 
   for (let i = 0; i < textChunks.length; i += BATCH_SIZE) {
@@ -23,11 +24,16 @@ export async function vectorEmbedderNode(
     logger.info(LogSource.VECTOR_EMBEDDER, `Batch ${Math.floor(i / BATCH_SIZE) + 1}: ${batch.length} chunk(s)`);
 
     // Call the injected Embedding adapter!
-    const vectors = await pipelineConfig.embedder.embed(batch);
-    allVectors.push(...vectors);
+    const { embeddings, usage } = await pipelineConfig.embedder.embed(batch);
+    allVectors.push(...embeddings);
+
+    totalUsage.input_tokens += usage.input_tokens;
+    totalUsage.output_tokens += usage.output_tokens;
+    totalUsage.total_tokens += usage.total_tokens;
+    totalUsage.cost += usage.cost;
   }
 
   logger.info(LogSource.VECTOR_EMBEDDER, `Generated ${allVectors.length} vectors (${allVectors[0]?.length ?? 0}d)`);
 
-  return { vectors: allVectors };
+  return { vectors: allVectors, usage: totalUsage };
 }

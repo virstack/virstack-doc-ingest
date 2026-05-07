@@ -59,17 +59,17 @@ export async function llmExtractionNode(
   }
 
   // Call the injected LLM adapter wrapped in your rate limiter!
-  const markdown = await apiLimit(() => 
+  const { markdown, usage } = await apiLimit(() => 
     pipelineConfig.llm.generateMarkdown(promptInput)
   );
 
   if (isChunkFlow) {
     logger.info(LogSource.LLM_EXTRACTION, `Chunk ${state.index! + 1}/${state.totalChunks} extracted (${markdown.length} chars)`);
-    return { markdownParts: [markdown] };
+    return { markdownParts: [markdown], usage };
   }
 
   logger.info(LogSource.LLM_EXTRACTION, `Extracted markdown: ${markdown.length} chars`);
-  return { markdown };
+  return { markdown, usage };
 }
 
 /**

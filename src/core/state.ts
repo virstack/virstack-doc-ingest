@@ -1,4 +1,5 @@
 import { Annotation } from "@langchain/langgraph";
+import type { UsageData } from "../adapters/aiAdapters.js";
 
 /**
  * LangGraph pipeline state definition.
@@ -31,6 +32,17 @@ export const PipelineStateAnnotation = Annotation.Root({
 
   /** Embedding vectors, one per text chunk */
   vectors: Annotation<number[][]>,
+
+  /** Accumulated usage data (tokens + cost) across all nodes */
+  usage: Annotation<UsageData>({
+    reducer: (x, y) => ({
+      input_tokens: (x?.input_tokens || 0) + (y?.input_tokens || 0),
+      output_tokens: (x?.output_tokens || 0) + (y?.output_tokens || 0),
+      total_tokens: (x?.total_tokens || 0) + (y?.total_tokens || 0),
+      cost: (x?.cost || 0) + (y?.cost || 0),
+    }),
+    default: () => ({ input_tokens: 0, output_tokens: 0, total_tokens: 0, cost: 0 })
+  })
 });
 
 export type PipelineState = typeof PipelineStateAnnotation.State;

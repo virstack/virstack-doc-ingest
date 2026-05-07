@@ -32,6 +32,7 @@ export {
 export {
   type LlmAdapter,
   type LlmInput,
+  type UsageData,
   type EmbeddingAdapter,
   OpenRouterLlmAdapter,
   OpenRouterEmbeddingAdapter,

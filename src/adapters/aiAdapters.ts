@@ -11,12 +11,19 @@ export interface LlmInput {
   mimeType?: string;
 }
 
+export interface UsageData {
+  input_tokens: number;
+  output_tokens: number;
+  total_tokens: number;
+  cost: number;
+}
+
 export interface LlmAdapter {
-  generateMarkdown(input: LlmInput): Promise<string>;
+  generateMarkdown(input: LlmInput): Promise<{ markdown: string; usage: UsageData }>;
 }
 
 export interface EmbeddingAdapter {
-  embed(chunks: string[]): Promise<number[][]>;
+  embed(chunks: string[]): Promise<{ embeddings: number[][]; usage: UsageData }>;
 }
 
 // --- BUILT-IN ADAPTERS (For CLI to use by default) ---
@@ -30,7 +37,7 @@ export class OpenRouterLlmAdapter implements LlmAdapter {
     this.model = model;
   }
 
-  async generateMarkdown(input: LlmInput): Promise<string> {
+  async generateMarkdown(input: LlmInput): Promise<{ markdown: string; usage: UsageData }> {
     const userContent: any[] = [];
     
     const mediaObj = input.base64Data || input.base64PdfChunk;
@@ -55,15 +62,23 @@ export class OpenRouterLlmAdapter implements LlmAdapter {
       }
     });
 
-    // The SDK returns ChatResponse when not streaming
     const chatResponse = response as any;
     const content = chatResponse.choices?.[0]?.message?.content;
+    const usage: UsageData = {
+      input_tokens: chatResponse.usage?.prompt_tokens || 0,
+      output_tokens: chatResponse.usage?.completion_tokens || 0,
+      total_tokens: chatResponse.usage?.total_tokens || 0,
+      cost: chatResponse.usage?.cost || 0
+    };
     
+    let markdown = "";
     if (Array.isArray(content)) {
-      return content.map(item => (item.type === 'text' ? item.text : '')).join('').trim();
+      markdown = content.map(item => (item.type === 'text' ? item.text : '')).join('').trim();
+    } else {
+      markdown = (typeof content === "string" ? content.trim() : "");
     }
-    
-    return (typeof content === "string" ? content.trim() : "");
+
+    return { markdown, usage };
   }
 }
 
@@ -78,7 +93,7 @@ export class OpenRouterEmbeddingAdapter implements EmbeddingAdapter {
     this.dimensions = dimensions;
   }
 
-  async embed(chunks: string[]): Promise<number[][]> {
+  async embed(chunks: string[]): Promise<{ embeddings: number[][]; usage: UsageData }> {
     const response = await this.client.embeddings.generate({
       requestBody: {
         model: this.model,
@@ -91,19 +106,27 @@ export class OpenRouterEmbeddingAdapter implements EmbeddingAdapter {
       throw new Error(`OpenRouter Embeddings API returned unexpected string response: ${response}`);
     }
 
+    const usage: UsageData = {
+      input_tokens: (response as any).usage?.prompt_tokens || 0,
+      output_tokens: (response as any).usage?.completion_tokens || 0,
+      total_tokens: (response as any).usage?.total_tokens || 0,
+      cost: (response as any).usage?.cost || 0
+    };
+
     // Maintain chunk order based on OpenRouter response structure
     let embeddingsList = response.data;
     if (embeddingsList.length > 0 && typeof embeddingsList[0].index === "number") {
       embeddingsList = embeddingsList.sort((a: any, b: any) => a.index - b.index);
     }
     
-    return embeddingsList.map((item: any) => {
+    const embeddings = embeddingsList.map((item: any) => {
       const emb = item.embedding;
       if (typeof emb === "string") {
-         // Some models might return base64 if requested, but we expect float arrays
          throw new Error("Received unexpected string embedding from OpenRouter");
       }
       return emb;
     });
+
+    return { embeddings, usage };
   }
 }
