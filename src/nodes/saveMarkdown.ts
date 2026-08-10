@@ -32,5 +32,5 @@ export async function saveMarkdown(state: PipelineState): Promise<Partial<Pipeli
 
   logger.success(LogSource.SAVE_MARKDOWN, `Markdown saved successfully`);
 
-  return {};
+  return { tempDirs: [outputDir] };
 }

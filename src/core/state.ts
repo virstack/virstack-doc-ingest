@@ -43,6 +43,12 @@ export const PipelineStateAnnotation = Annotation.Root({
     }),
     default: () => ({ input_tokens: 0, output_tokens: 0, total_tokens: 0, cost: 0 }),
   }),
+
+  /** Temporary directories created during processing to be cleaned up after pipeline completes */
+  tempDirs: Annotation<string[]>({
+    reducer: (x, y) => x.concat(y),
+    default: () => [],
+  }),
 });
 
 export type PipelineState = typeof PipelineStateAnnotation.State;

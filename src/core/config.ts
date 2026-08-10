@@ -21,6 +21,7 @@ export interface VirstackDocIngestConfig {
   maxConcurrentApi?: number;
   systemPrompt?: string;
   maxTokens?: number;
+  keepLocalFiles?: boolean;
 }
 
 // 2. Hold the global settings
@@ -58,6 +59,7 @@ export function initializeConfig(config: VirstackDocIngestConfig) {
     maxConcurrentApi: config.maxConcurrentApi || 15,
     systemPrompt: config.systemPrompt,
     maxTokens: config.maxTokens || 16384,
+    keepLocalFiles: config.keepLocalFiles ?? false,
   } as Required<VirstackDocIngestConfig>;
 
   // Global rate limiter initialized lazily
@@ -114,6 +116,7 @@ export function getEnvConfig(): VirstackDocIngestConfig {
       : undefined,
     systemPrompt: process.env.SYSTEM_PROMPT,
     maxTokens: process.env.MAX_TOKENS ? parseInt(process.env.MAX_TOKENS, 10) : undefined,
+    keepLocalFiles: process.env.KEEP_LOCAL_FILES === "true",
   };
 }
 

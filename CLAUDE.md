@@ -46,14 +46,14 @@ Publishing is automatic: any push to `main` triggers `.github/workflows/publish.
 
 ```
 … → llmExtractionNode → (routeAfterLlm) → markdownMerger? → markdownNormalizer
-  → saveMarkdown → markdownChunker → vectorEmbedderNode → vectorUpsertNode → END
+  → saveMarkdown → markdownChunker → vectorEmbedderNode → vectorUpsertNode → cleanupNode → END
 ```
 
 `routeAfterLlm` distinguishes branches by state shape: `markdownParts` non-empty and `markdown` unset means the fan-out branch, so merge; otherwise normalize directly.
 
 ### State reducers
 
-`src/core/state.ts` — `markdownParts` and `usage` are the only reducing channels. `markdownParts` concatenates (this is how parallel `Send` results merge), and `usage` sums tokens/cost across every node. Any node that spends tokens must return a `usage` object for cost tracking to stay accurate.
+`src/core/state.ts` — `markdownParts`, `tempDirs`, and `usage` are the reducing channels. `markdownParts` concatenates (this is how parallel `Send` results merge), `tempDirs` tracks intermediate directories for cleanup, and `usage` sums tokens/cost across every node. Any node that spends tokens must return a `usage` object for cost tracking to stay accurate.
 
 ### Dependency injection
 
@@ -73,4 +73,5 @@ Three adapter contracts (`src/adapters/`): `LlmAdapter.generateMarkdown()`, `Emb
 - New file-type support requires touching four places: `SUPPORTED_FILE_EXTENSIONS` in `src/core/constants.ts`, the MIME lists in `routeByMimeType`, `SUPPORTED_EXTENSIONS` in `src/cli.ts` (a separate hardcoded set that currently omits image extensions), and the public re-exports in `src/index.ts` if new types are introduced.
 - `src/index.ts` is the package's public surface — anything consumers need must be re-exported there.
 - LibreOffice is an external runtime dependency for the `convert` branch; the binary is resolved from `SOFFICE_PATH` or falls back to `soffice` on `PATH`.
-- `saveMarkdown` always writes to `./outputs/<basename>_<md5-16>/full_content.md` relative to `process.cwd()`; `outputs/` is gitignored.
+- `saveMarkdown` writes to `./outputs/<basename>_<md5-16>/full_content.md` and records the output folder in `state.tempDirs`.
+- `cleanupNode` automatically deletes all tracked temporary directories (including `./outputs/` and `/tmp/lo-pdf-*`) after execution unless `keepLocalFiles` is explicitly set to `true` (via `VirstackDocIngestConfig.keepLocalFiles` or `KEEP_LOCAL_FILES=true`). Default is `false`.

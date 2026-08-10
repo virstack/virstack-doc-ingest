@@ -69,5 +69,5 @@ export async function libreOfficeToPdf(state: PipelineState): Promise<Partial<Pi
 
   logger.success(LogSource.LIBRE_OFFICE, `Converted to: ${pdfPath}`);
 
-  return { filePath: pdfPath, mimeType: "application/pdf" };
+  return { filePath: pdfPath, mimeType: "application/pdf", tempDirs: [outputDir] };
 }

@@ -13,6 +13,7 @@ export const LogSource = {
   SAVE_MARKDOWN: "Save Markdown",
   TEXT_EXTRACTOR: "Text Extractor",
   VECTOR_UPSERT: "Vector Upsert",
+  CLEANUP: "Cleanup",
 } as const;
 
 export type LogSourceType = (typeof LogSource)[keyof typeof LogSource];

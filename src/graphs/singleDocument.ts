@@ -13,6 +13,7 @@ import { vectorUpsertNode } from "../nodes/vectorUpsertNode.js";
 import { saveMarkdown } from "../nodes/saveMarkdown.js";
 import { libreOfficeToPdf } from "../nodes/libreOfficeToPdf.js";
 import { imageReaderNode } from "../nodes/imageReaderNode.js";
+import { cleanupNode } from "../nodes/cleanupNode.js";
 
 /**
  * Builds and compiles the Virstack Doc Ingest pipeline as a LangGraph StateGraph.
@@ -22,7 +23,7 @@ import { imageReaderNode } from "../nodes/imageReaderNode.js";
  *     ├─ "pdf"     → pdfSplitter → [llmExtractionNode (Parallel)] → markdownMerger → markdownNormalizer
  *     ├─ "convert" → libreOfficeToPdf → pdfSplitter → (same as pdf branch)
  *     └─ "extract" → textExtractorNode → llmExtractionNode → markdownNormalizer
- *   markdownNormalizer → saveMarkdown → markdownChunker → vectorEmbedderNode → vectorUpsertNode → END
+ *   markdownNormalizer → saveMarkdown → markdownChunker → vectorEmbedderNode → vectorUpsertNode → cleanupNode → END
  */
 
 /**
@@ -68,6 +69,9 @@ export function buildPipeline() {
     .addNode("vectorEmbedderNode", vectorEmbedderNode)
     .addNode("vectorUpsertNode", vectorUpsertNode)
 
+    // ── Phase 5: Cleanup ──
+    .addNode("cleanupNode", cleanupNode)
+
     // ── Edges ──
     // Start → Router
     .addEdge("__start__", "fileTypeRouter")
@@ -99,12 +103,13 @@ export function buildPipeline() {
     // If PDF branch, finish merger
     .addEdge("markdownMerger", "markdownNormalizer")
 
-    // Shared tail: normalize → save → chunk → embed → upsert → end
+    // Shared tail: normalize → save → chunk → embed → upsert → cleanup → end
     .addEdge("markdownNormalizer", "saveMarkdown")
     .addEdge("saveMarkdown", "markdownChunker")
     .addEdge("markdownChunker", "vectorEmbedderNode")
     .addEdge("vectorEmbedderNode", "vectorUpsertNode")
-    .addEdge("vectorUpsertNode", END);
+    .addEdge("vectorUpsertNode", "cleanupNode")
+    .addEdge("cleanupNode", END);
 
   return graph.compile();
 }
