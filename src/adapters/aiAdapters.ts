@@ -1,4 +1,5 @@
 import { OpenRouter } from "@openrouter/sdk";
+import { logger, LogSource } from "../core/logger.js";
 
 // --- CONTRACTS (Interfaces) ---
 
@@ -51,17 +52,28 @@ export class OpenRouterLlmAdapter implements LlmAdapter {
     }
     userContent.push({ type: "text", text: input.userText });
 
-    const response = await this.client.chat.send({
-      chatGenerationParams: {
-        model: this.model,
-        messages: [
-          { role: "system", content: input.systemPrompt },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          { role: "user", content: userContent as any },
-        ],
-        temperature: 0,
-      },
-    });
+    let response;
+    try {
+      response = await this.client.chat.send({
+        chatGenerationParams: {
+          model: this.model,
+          messages: [
+            { role: "system", content: input.systemPrompt },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            { role: "user", content: userContent as any },
+          ],
+          temperature: 0,
+        },
+      });
+    } catch (err: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const errorObj = err as any;
+      logger.error(
+        LogSource.LLM_EXTRACTION,
+        `OpenRouter request failed: ${errorObj?.message}. Body: ${errorObj?.body ?? "n/a"}`
+      );
+      throw err;
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const chatResponse = response as Record<string, any>;
