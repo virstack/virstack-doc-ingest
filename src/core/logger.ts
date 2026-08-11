@@ -29,12 +29,12 @@ export interface CustomLogger {
 // Default console implementation (used by default for Library consumers)
 const defaultLogger: CustomLogger = {
   info: (source, message) => console.log(`[${source}] ${message}`),
-  warn: (source, message) => console.warn(`[${source}] ⚠️ ${message}`),
+  warn: (source, message) => console.warn(`[${source}] ${message}`),
   error: (source, message, error) => {
-    if (error !== undefined) console.error(`[${source}] ❌ ${message}`, error);
-    else console.error(`[${source}] ❌ ${message}`);
+    if (error !== undefined) console.error(`[${source}] ${message}`, error);
+    else console.error(`[${source}] ${message}`);
   },
-  success: (source, message) => console.log(`[${source}] ✅ ${message}`),
+  success: (source, message) => console.log(`[${source}] ${message}`),
 };
 
 // Store the active logger
